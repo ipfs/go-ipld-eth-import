@@ -15,16 +15,15 @@ func main() {
 	// Get the console arguments
 
 	// TODO
-	// I need the multihash
-	// DEBUG
+	// Should use a parameter
 	buf, _ := hex.DecodeString("6263d74e77b2fdc85d359f95a04bec722ff91417154840f908e89652d202bdca")
 	mHashBuf, _ := multihash.EncodeName(buf, "keccak-256")
-	mHash, _ := multihash.Decode(mHashBuf)
-	// DEBUG
 
+	// TODO
+	// Should use a parameter
 	codecType := cid.Codecs["eth-block"]
 
-	c := cid.NewCidV1(codecType, mHash)
+	c := cid.NewCidV1(codecType, mHashBuf)
 
-	fmt.Printf("---> %v", c)
+	fmt.Printf("%s\n", c)
 }
