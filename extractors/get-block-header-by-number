@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo NOT IMPLEMENTED
+
+# curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x3df070", true],"id":1}' http://localhost:8545
