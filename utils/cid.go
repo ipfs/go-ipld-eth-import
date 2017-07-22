@@ -8,7 +8,7 @@ import (
 	multihash "github.com/multiformats/go-multihash"
 )
 
-// This program just returns a cid against the input parameters
+// This program just returns a keccak-256 cid against the input parameters
 func main() {
 
 	// TODO
