@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for i in `seq 4061592 -1 0`;
+do
+	echo Querying Block $i...
+	BLOCK_NUMBER_DEC=$i
+	BLOCK_NUMBER_HEX=$(printf "%06x" $BLOCK_NUMBER_DEC)
+	curl -s -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x'$BLOCK_NUMBER_HEX'", true],"id":1}' http://localhost:8545 > eth-block-plus-txs-json-$BLOCK_NUMBER_DEC
+done
