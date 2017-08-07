@@ -1,2 +1,2 @@
-all:
-	go build -o build/bin/cid utils/cid.go
+eth-import:
+	go build -o build/bin/eth-import main.go

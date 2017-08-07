@@ -61,6 +61,7 @@ docker run --rm -ti -v ~/.ipfs:/root/.ipfs ipfs-plus-eth-plugin ipfs init
 docker run --rm -ti -v ~/.ipfs:/root/.ipfs ipfs-plus-eth-plugin ipfs daemon
 
 # Insert some ETH data
+# Notice than we use `docker dash i`, no `t`
 cat eth-block-body-json-997522 | docker exec -i ipfs ipfs dag put --input-enc json --format eth-block
 
 # (Will give you the cid z43AaGEzuAXhWf9pWAm63QCERtFpqcc6gQX3QBBNaG1syxGGhg6)
