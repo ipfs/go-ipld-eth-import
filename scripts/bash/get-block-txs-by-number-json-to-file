@@ -1,5 +1,12 @@
 #!/bin/bash
 
+################################################################################
+#
+#  Imports from the block 4,061,592 to the block 0 from the JSON RPC
+#  the block bodies (header, txs and ommer hashes), into a directory.
+#
+################################################################################
+
 for i in `seq 4061592 -1 0`;
 do
 	echo Querying Block $i...
