@@ -1,21 +1,36 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"gx/ipfs/QmbBhyDKsY4mbY6xsKt3qu9Y7FPvMJ6qbD8AMjYYvPRw1g/goleveldb/leveldb"
-	"gx/ipfs/QmbBhyDKsY4mbY6xsKt3qu9Y7FPvMJ6qbD8AMjYYvPRw1g/goleveldb/leveldb/errors"
 )
 
 func main() {
-	file := "/Users/hj/.parity-data/chains/ethereum/db/906a34e69aec8c0d/overlayrecent/db"
-	db, err := leveldb.OpenFile(file, nil)
-	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {
-		fmt.Println("Corrupta")
-		db, err = leveldb.RecoverFile(file, nil)
-	}
-	if err != nil {
-		panic(err)
-	}
+	var blockNumber uint64
 
-	fmt.Printf("%v\n", db)
+	// Command line options
+	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
+	flag.Parse()
+
+	// Cold Database
+	db := InitStart()
+	defer db.Stop()
+
+	// Launch State Traversal
+	ts := NewTrieStack(blockNumber)
+	defer ts.Close()
+
+	ts.TraverseStateTrie(db, blockNumber)
+
+	// Print some stats
+	printReport(ts)
+}
+
+func printReport(ts *trieStack) {
+	fmt.Printf("Traversal finished\n==================\n\n")
+	fmt.Printf("Time elapsed:\t\t%d ms\n", ts.Stats.TotalTime)
+	fmt.Printf("Number of iterations:\t%d\n", ts.Stats.IterationsCnt)
+	fmt.Printf("\tBranches:\t%d\n", ts.Stats.BranchCnt)
+	fmt.Printf("\tExtensions:\t%d\n", ts.Stats.ExtensionCnt)
+	fmt.Printf("\tLeaves:\t\t%d\n", ts.Stats.LeafCnt)
 }

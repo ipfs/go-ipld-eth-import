@@ -21,8 +21,12 @@ go-ethereum and puts it into an IPFS client.
 
 ### Usage
 
+Compile with `make cold`.
+
+Execute doing
+
 ```
-./build/bin/cold-importer --dbpath <dbpath> <options>
+./build/bin/cold-importer --dbpath <dbpath> --block-number <block-number>
 ```
 
 #### Command Line Parameters

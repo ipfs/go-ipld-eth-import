@@ -1,10 +1,7 @@
 cold:
-	go build -o build/bin/cold-importer cold-importer/main.go
-
-run-cold:
-	./build/bin/cold-importer
+	go build -o build/bin/cold-importer cold-importer/*.go
 
 clean:
 	rm -rf build/bin/*
 
-.PHONY: cold run-cold clean
+.PHONY: cold clean
