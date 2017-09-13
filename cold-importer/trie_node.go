@@ -123,6 +123,21 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 				}
 			}
 		}
+
+		// DEBUG
+		/*
+			// Print in files
+
+			xx_path := fmt.Sprintf("/tmp/my_files/%x", key)
+			if err := ioutil.WriteFile(xx_path, val, 0644); err != nil {
+				panic(err)
+			}
+		*/
+
+		// Print in Console
+		// fmt.Printf("%x\n%x\n\n-------------------------------------------------\n", key, val)
+		// DEBUG
+
 	}
 
 	// TotalTime stats
@@ -169,6 +184,11 @@ func (ts *trieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
 			// Zero tolerance
 			panic("unknown hex prefix on trie node")
 		}
+
+		// DEBUG
+		// So we can find the 00, 01, 02 and 03 (for testing purposes)
+		// fmt.Printf("first: %x\n\n", first)
+		// DEBUG
 
 	case 17:
 		// This is a branch
