@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	metrics "github.com/hermanjunge/go-ipld-eth-import/metrics"
 )
 
 func main() {
@@ -28,9 +30,13 @@ func main() {
 
 func printReport(ts *trieStack) {
 	fmt.Printf("Traversal finished\n==================\n\n")
-	fmt.Printf("Time elapsed:\t\t%d ms\n", ts.Stats.TotalTime)
-	fmt.Printf("Number of iterations:\t%d\n", ts.Stats.IterationsCnt)
-	fmt.Printf("\tBranches:\t%d\n", ts.Stats.BranchCnt)
-	fmt.Printf("\tExtensions:\t%d\n", ts.Stats.ExtensionCnt)
-	fmt.Printf("\tLeaves:\t\t%d\n", ts.Stats.LeafCnt)
+	fmt.Printf("Number of iterations:\t\t%d\n", metrics.GetCountTimer("traverse-state-trie-iterations"))
+	fmt.Printf("\tBranches:\t\t%d\n", metrics.GetCounter("traverse-state-trie-branches"))
+	fmt.Printf("\tExtensions:\t\t%d\n", metrics.GetCounter("traverse-state-trie-extensions"))
+	fmt.Printf("\tLeaves:\t\t\t%d\n", metrics.GetCounter("traverse-state-trie-leaves"))
+
+	fmt.Printf("==========================================\n\n")
+	fmt.Printf("Time elapsed:\t\t\t%d ms\n", metrics.GetTotalDiffTimer("traverse-state-trie"))
+	_, _, avg := metrics.GetAverageDiffTimer("traverse-state-trie-iterations")
+	fmt.Printf("Avg time per iteration:\t\t%.0f ns\n", avg)
 }

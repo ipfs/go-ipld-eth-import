@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strconv"
-	"time"
 
 	goque "github.com/beeker1121/goque"
 	types "github.com/ethereum/go-ethereum/core/types"
 	rlp "github.com/ethereum/go-ethereum/rlp"
+	metrics "github.com/hermanjunge/go-ipld-eth-import/metrics"
 	cid "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -19,26 +20,17 @@ const MEthStateTrie = 0x96
 // methods for dealing with the state trie.
 type trieStack struct {
 	*goque.Stack
-
-	Stats *stats
-}
-
-// stats is the set of counters
-type stats struct {
-	IterationsCnt int
-	BranchCnt     int
-	ExtensionCnt  int
-	LeafCnt       int
-	TotalTime     int64
 }
 
 func NewTrieStack(blockNumber uint64) *trieStack {
 	var err error
 	ts := &trieStack{}
 
-	ts.Stats = &stats{}
-
 	dataDirectoryName := "/tmp/trie_stack_data_dir/" + strconv.FormatUint(blockNumber, 10)
+
+	// Clearing the directory if exists, as we want to start always
+	// with a fresh stack database.
+	os.RemoveAll(dataDirectoryName)
 	ts.Stack, err = goque.OpenStack(dataDirectoryName)
 	if err != nil {
 		panic(err)
@@ -52,8 +44,7 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 	var err error
 
-	// TotalTime stats
-	then := time.Now()
+	metrics.NewTimer("traverse-state-trie")
 
 	// From the block number, we get its canonical hash, and header RLP
 	blockHash := db.GetCanonicalHash(blockNumber)
@@ -70,13 +61,17 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 		panic(err)
 	}
 
+	metrics.NewTimer("traverse-state-trie-iterations")
+	metrics.NewCounter("traverse-state-trie-branches")
+	metrics.NewCounter("traverse-state-trie-extensions")
+	metrics.NewCounter("traverse-state-trie-leaves")
+
 	for {
-		ts.Stats.IterationsCnt += 1
+		metrics.ClickTimer("traverse-state-trie-iterations")
 
 		// Get the next item from the stack
 		item, err := ts.Pop()
 		if err == goque.ErrEmpty {
-			fmt.Println("Stack Empty. We are done here :D")
 			break
 		}
 		if err != nil {
@@ -112,6 +107,9 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 			panic(err)
 		}
 
+		// TODO
+		// Count the bytes of the value
+
 		// Process this element
 		// If it is a branch or an extension, add their children to the stack
 		children := ts.processTrieNode(val)
@@ -123,26 +121,10 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 				}
 			}
 		}
-
-		// DEBUG
-		/*
-			// Print in files
-
-			xx_path := fmt.Sprintf("/tmp/my_files/%x", key)
-			if err := ioutil.WriteFile(xx_path, val, 0644); err != nil {
-				panic(err)
-			}
-		*/
-
-		// Print in Console
-		// fmt.Printf("%x\n%x\n\n-------------------------------------------------\n", key, val)
-		// DEBUG
-
 	}
 
-	// TotalTime stats
-	t := time.Now()
-	ts.Stats.TotalTime = t.Sub(then).Nanoseconds() / (1000 * 1000)
+	// Get total time of this whole operation
+	metrics.ClickTimer("traverse-state-trie")
 }
 
 // processTrieNode will decode the given RLP. If the result is a branch or
@@ -172,13 +154,13 @@ func (ts *trieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
 			fallthrough
 		case '\x01':
 			// This is an extension
-			ts.Stats.ExtensionCnt += 1
+			metrics.IncCounter("traverse-state-trie-extensions")
 			out = [][]byte{last}
 		case '\x02':
 			fallthrough
 		case '\x03':
 			// This is a leaf
-			ts.Stats.LeafCnt += 1
+			metrics.IncCounter("traverse-state-trie-leaves")
 			out = nil
 		default:
 			// Zero tolerance
@@ -192,7 +174,7 @@ func (ts *trieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
 
 	case 17:
 		// This is a branch
-		ts.Stats.BranchCnt += 1
+		metrics.IncCounter("traverse-state-trie-branches")
 
 		for _, vi := range i {
 			v := vi.([]byte)
