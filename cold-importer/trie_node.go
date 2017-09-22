@@ -170,11 +170,6 @@ func (ts *trieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
 			panic("unknown hex prefix on trie node")
 		}
 
-		// DEBUG
-		// So we can find the 00, 01, 02 and 03 (for testing purposes)
-		// fmt.Printf("first: %x\n\n", first)
-		// DEBUG
-
 	case 17:
 		// This is a branch
 		metrics.IncCounter("traverse-state-trie-branches")
