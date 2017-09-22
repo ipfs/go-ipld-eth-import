@@ -41,14 +41,14 @@ func printReport(ts *trieStack) {
 	fmt.Printf("==========================================\n\n")
 
 	_, sum, _ = metrics.GetAverageLogDiff("traverse-state-trie")
-	fmt.Printf("Time elapsed:\t\t\t%d ms\n", sum/(1000*1000))
+	fmt.Printf("Time elapsed:\t\t\t%d \t\tms\n", sum/(1000*1000))
 
 	n, sum, avg = metrics.GetAverageLogDiff("traverse-state-trie-iterations")
-	fmt.Printf("Avg time per iteration:\t\t%.0f ns\t(%d %d)\n", avg, sum, n)
+	fmt.Printf("Avg time per iteration:\t\t%.0f \t\tns\t(%d %d)\n", avg, sum, n)
 
 	n, sum, avg = metrics.GetAverageLogDiff("geth-leveldb-get-query")
-	fmt.Printf("Avg time per levelDB:\t\t%.0f ns\t\t(%d %d)\n", avg, sum, n)
+	fmt.Printf("Avg time per levelDB:\t\t%.0f \t\tns\t(%d %d)\n", avg, sum, n)
 
 	n, sum, avg = metrics.GetAverageLogDiff("new-nodes-bytes-tranferred")
-	fmt.Printf("Total bytes state:\t\t%d bytes\t(%.0f %d)\n", sum, avg, n)
+	fmt.Printf("Total bytes state:\t\t%d \tbytes\t(%.0f %d)\n", sum, avg, n)
 }
