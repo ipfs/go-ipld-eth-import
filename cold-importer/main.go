@@ -37,6 +37,9 @@ func printReport(ts *trieStack) {
 
 	fmt.Printf("==========================================\n\n")
 	fmt.Printf("Time elapsed:\t\t\t%d ms\n", metrics.GetTotalDiffTimer("traverse-state-trie"))
-	_, _, avg := metrics.GetAverageDiffTimer("traverse-state-trie-iterations")
-	fmt.Printf("Avg time per iteration:\t\t%.0f ns\n", avg)
+	n, sum, avg := metrics.GetAverageDiffTimer("traverse-state-trie-iterations")
+	fmt.Printf("Avg time per iteration:\t\t%.0f ns\t(%d %d)\n", avg, sum, n)
+	n, sum, avg = metrics.GetAverageLogDiff("geth-leveldb-get-query")
+	fmt.Printf("Avg time per levelDB:\t\t%.0f ns\t\t(%d %d)\n", avg, sum, n)
+
 }
