@@ -36,6 +36,14 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 		panic(err)
 	}
 
+	// Metrics in this operation
+	metrics.NewLogger("traverse-state-trie")
+	metrics.NewLogger("geth-leveldb-get-query")
+	metrics.NewLogger("traverse-state-trie-iterations")
+	metrics.NewCounter("traverse-state-trie-branches")
+	metrics.NewCounter("traverse-state-trie-extensions")
+	metrics.NewCounter("traverse-state-trie-leaves")
+
 	return ts
 }
 
@@ -44,7 +52,7 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 	var err error
 
-	metrics.NewTimer("traverse-state-trie")
+	metrics.StartLogDiff("traverse-state-trie")
 
 	// From the block number, we get its canonical hash, and header RLP
 	blockHash := db.GetCanonicalHash(blockNumber)
@@ -61,14 +69,8 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 		panic(err)
 	}
 
-	metrics.NewTimer("traverse-state-trie-iterations")
-	metrics.NewCounter("traverse-state-trie-branches")
-	metrics.NewCounter("traverse-state-trie-extensions")
-	metrics.NewCounter("traverse-state-trie-leaves")
-	metrics.NewLogger("geth-leveldb-get-query")
-
 	for {
-		metrics.ClickTimer("traverse-state-trie-iterations")
+		_tsti := metrics.StartLogDiff("traverse-state-trie-iterations")
 
 		// Get the next item from the stack
 		item, err := ts.Pop()
@@ -103,12 +105,12 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 		// to ensure some modularity.
 
 		// Let's get that data
-		lDiff := metrics.StartLogDiff("geth-leveldb-get-query")
+		_l := metrics.StartLogDiff("geth-leveldb-get-query")
 		val, err := db.Get(key)
 		if err != nil {
 			panic(err)
 		}
-		metrics.StopLogDiff("geth-leveldb-get-query", lDiff)
+		metrics.StopLogDiff("geth-leveldb-get-query", _l)
 
 		// TODO
 		// Count the bytes of the value
@@ -124,10 +126,11 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 				}
 			}
 		}
+
+		metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
 	}
 
-	// Get total time of this whole operation
-	metrics.ClickTimer("traverse-state-trie")
+	metrics.StopLogDiff("traverse-state-trie", 0)
 }
 
 // processTrieNode will decode the given RLP. If the result is a branch or
