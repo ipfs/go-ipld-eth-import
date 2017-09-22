@@ -40,6 +40,8 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 	metrics.NewLogger("traverse-state-trie")
 	metrics.NewLogger("geth-leveldb-get-query")
 	metrics.NewLogger("traverse-state-trie-iterations")
+	metrics.NewLogger("new-nodes-bytes-tranferred")
+
 	metrics.NewCounter("traverse-state-trie-branches")
 	metrics.NewCounter("traverse-state-trie-extensions")
 	metrics.NewCounter("traverse-state-trie-leaves")
@@ -111,9 +113,7 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 			panic(err)
 		}
 		metrics.StopLogDiff("geth-leveldb-get-query", _l)
-
-		// TODO
-		// Count the bytes of the value
+		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
 
 		// Process this element
 		// If it is a branch or an extension, add their children to the stack

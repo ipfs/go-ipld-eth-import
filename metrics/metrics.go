@@ -65,6 +65,12 @@ func NewLogger(key string) {
 	}
 }
 
+func AddLog(key string, val int64) {
+	if _, ok := data.loggers[key]; ok {
+		data.loggers[key] = append(data.loggers[key], val)
+	}
+}
+
 // StartLogDiff returns the index of the value logged,
 // So you can get the time difference with it uwing StopLogDiff().
 // It will store your time value as a negative number.

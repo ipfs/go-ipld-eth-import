@@ -48,4 +48,7 @@ func printReport(ts *trieStack) {
 
 	n, sum, avg = metrics.GetAverageLogDiff("geth-leveldb-get-query")
 	fmt.Printf("Avg time per levelDB:\t\t%.0f ns\t\t(%d %d)\n", avg, sum, n)
+
+	n, sum, avg = metrics.GetAverageLogDiff("new-nodes-bytes-tranferred")
+	fmt.Printf("Total bytes state:\t\t%d bytes\t(%.0f %d)\n", sum, avg, n)
 }
