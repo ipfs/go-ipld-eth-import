@@ -8,8 +8,15 @@
 #
 ################################################################################
 
+# IPFS + Plugin
+go get -v github.com/ethereum/go-ethereum
 go get -v github.com/ipfs/go-ipfs
 cd /go/src/github.com/ipfs/go-ipfs/
 make deps
 
-go get -v github.com/ethereum/go-ethereum
+# Cold Importer
+go get -v github.com/beeker1121/goque
+go get -v github.com/ipfs/go-cid
+go get -v github.com/multiformats/go-multihash
+go get -v github.com/syndtr/goleveldb/leveldb
+go get -v github.com/syndtr/goleveldb/leveldb/errors

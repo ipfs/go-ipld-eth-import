@@ -8,14 +8,18 @@ import (
 )
 
 func main() {
-	var blockNumber uint64
+	var (
+		blockNumber uint64
+		dbFilePath  string
+	)
 
 	// Command line options
 	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
+	flag.StringVar(&dbFilePath, "geth-db-filepath", "", "Path to the Go-Ethereum Database")
 	flag.Parse()
 
 	// Cold Database
-	db := InitStart()
+	db := InitStart(dbFilePath)
 	defer db.Stop()
 
 	// Launch State Traversal

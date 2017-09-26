@@ -12,12 +12,14 @@ type gethDB struct {
 	db *leveldb.DB
 }
 
-func InitStart() *gethDB {
-	file := "/Users/hj/Documents/tmp/geth-data/geth/chaindata"
-	db, err := leveldb.OpenFile(file, nil)
+func InitStart(path string) *gethDB {
+	if path == "" {
+		panic("Path to the Geth's DB must be specified (--geth-db-filepath option)")
+	}
+	db, err := leveldb.OpenFile(path, nil)
 	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {
 		fmt.Println("Corrupta")
-		db, err = leveldb.RecoverFile(file, nil)
+		db, err = leveldb.RecoverFile(path, nil)
 	}
 	if err != nil {
 		panic(err)

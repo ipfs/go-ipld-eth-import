@@ -55,7 +55,32 @@ docker run \
 
 When this ends, We should be good to go and ready to make those images.
 
-### Build the cold importer
+### Build the cold importer image
 
-(TODO)
-(TODO: Just run the docker build command)
+Just run this command
+
+```
+./docker/build-cold-importer-image.sh
+```
+
+Or
+
+```
+make docker-cold
+```
+
+It will
+
+* Build (with the image above) the file ./build/bin/docker-cold-importer
+* Create a docker image holding that executable.
+
+From there you can just push the image to your docker repository,
+making it available to your servers.
+
+**NOTE**: We are aware that the image weights +/- `130MB`. Optimization
+is advisable, Pull Requests are welcome!
+
+### Run the cold importer container
+
+* TODO
+* Need to move forward in the connection to the ipfs shell.
