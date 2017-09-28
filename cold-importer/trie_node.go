@@ -9,8 +9,8 @@ import (
 	goque "github.com/beeker1121/goque"
 	types "github.com/ethereum/go-ethereum/core/types"
 	rlp "github.com/ethereum/go-ethereum/rlp"
-	metrics "github.com/hermanjunge/go-ipld-eth-import/metrics"
 	cid "github.com/ipfs/go-cid"
+	metrics "github.com/ipfs/go-ipld-eth-import/metrics"
 	mh "github.com/multiformats/go-multihash"
 )
 
