@@ -12,7 +12,7 @@ type gethDB struct {
 	db *leveldb.DB
 }
 
-func InitStart(path string) *gethDB {
+func gethDBInitStart(path string) *gethDB {
 	if path == "" {
 		panic("Path to the Geth's DB must be specified (--geth-db-filepath option)")
 	}

@@ -38,7 +38,11 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 
 	// Metrics in this operation
 	metrics.NewLogger("traverse-state-trie")
-	metrics.NewLogger("geth-leveldb-get-query")
+	metrics.NewLogger("ipfs-dag-get-queries")
+	metrics.NewLogger("ipfs-dag-put-queries")
+	metrics.NewLogger("geth-leveldb-get-queries")
+	metrics.NewLogger("trie-node-processes")
+
 	metrics.NewLogger("traverse-state-trie-iterations")
 	metrics.NewLogger("new-nodes-bytes-tranferred")
 
@@ -51,7 +55,7 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 
 // TraverseStateTrie, traverses the entire state trie of a given block number
 // from a "cold" geth database
-func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
+func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *ipfsShell, blockNumber uint64) {
 	var err error
 
 	metrics.StartLogDiff("traverse-state-trie")
@@ -71,8 +75,12 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 		panic(err)
 	}
 
+	_iterationsCnt := 1
+
 	for {
 		_tsti := metrics.StartLogDiff("traverse-state-trie-iterations")
+		fmt.Printf("%d\r", _iterationsCnt)
+		_iterationsCnt += 1
 
 		// Get the next item from the stack
 		item, err := ts.Pop()
@@ -93,30 +101,58 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 		}
 		c := cid.NewCidV1(MEthStateTrie, mhash)
 
-		// DEBUG
+		/*
+			// Do we have this merkle trie imported already?
+			_l := metrics.StartLogDiff("ipfs-dag-get-queries")
+			var out interface{}
+			err = ipfs.DagGet(c.String(), out)
+			metrics.StopLogDiff("ipfs-dag-get-queries", _l)
+
+			fmt.Printf("---> err: %v out: %v\n", err, out)
+
+			found := true
+			if err != nil {
+				if err.Error() == "dag/get: merkledag: not found" {
+					found = false
+				} else {
+					panic(err)
+				}
+			}
+
+			// Stop this iteration if you already have it
+			if found {
+				metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
+				continue
+			}
+		*/
+
 		_ = c
-		// DEBUG
 
-		// TODO
-		// Find out whether we already have this data imported in our local IPFS
-		// * If we have it, it means that this branch has been already traversed,
-		//   meaning that we need to `continue`
-		// * If we don't let's add this data, before continuing the traversing.
-		// NOTE
-		// Pass the ipfs functions from outside this library,
-		// to ensure some modularity.
-
-		// Let's get that data
-		_l := metrics.StartLogDiff("geth-leveldb-get-query")
+		// We don't have it, so,
+		// Let's get that data, then
+		_l := metrics.StartLogDiff("geth-leveldb-get-queries")
 		val, err := db.Get(key)
 		if err != nil {
 			panic(err)
 		}
-		metrics.StopLogDiff("geth-leveldb-get-query", _l)
+		metrics.StopLogDiff("geth-leveldb-get-queries", _l)
 		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
+
+		/*
+
+			// Import it!
+			_l = metrics.StartLogDiff("ipfs-dag-put-queries")
+			_, err = ipfs.DagPut(val, "raw", "eth-state-trie")
+			if err != nil {
+				panic(err)
+			}
+			metrics.StopLogDiff("ipfs-dag-put-queries", _l)
+
+		*/
 
 		// Process this element
 		// If it is a branch or an extension, add their children to the stack
+		_l = metrics.StartLogDiff("trie-node-processes")
 		children := ts.processTrieNode(val)
 		if children != nil {
 			for _, child := range children {
@@ -126,6 +162,7 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, blockNumber uint64) {
 				}
 			}
 		}
+		metrics.StopLogDiff("trie-node-processes", _l)
 
 		metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
 	}
