@@ -103,13 +103,14 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 
 		// Do we have this merkle trie imported already?
 		_l := metrics.StartLogDiff("ipfs-dag-get-queries")
-		_, err = ipfs.DagGet(c.String())
+		blockFound := ipfs.HasBlock(c.String())
 		metrics.StopLogDiff("ipfs-dag-get-queries", _l)
 
 		// TODO
 		// Some logic to perform a `continue`, and close
 		// the `traverse-state-trie-iteration` metric.
 		// Should be the case we already have this trie root.
+		_ = blockFound
 
 		// We don't have it, so,
 		// Let's get that data, then

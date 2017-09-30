@@ -9,19 +9,19 @@ import (
 
 func main() {
 	var (
-		blockNumber uint64
-		ipfsCmd     string
-		dbFilePath  string
+		blockNumber  uint64
+		ipfsRepoPath string
+		dbFilePath   string
 	)
 
 	// Command line options
 	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
-	flag.StringVar(&ipfsCmd, "ipfs-cmd", "ipfs", "IPFS command path")
+	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
 	flag.StringVar(&dbFilePath, "geth-db-filepath", "", "Path to the Go-Ethereum Database")
 	flag.Parse()
 
 	// IPFS
-	ipfs := ipfsInit(ipfsCmd)
+	ipfs := ipfsInit(ipfsRepoPath)
 
 	// Cold Database
 	db := gethDBInitStart(dbFilePath)
