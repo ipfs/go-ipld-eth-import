@@ -55,7 +55,7 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 
 // TraverseStateTrie, traverses the entire state trie of a given block number
 // from a "cold" geth database
-func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *ipfsShell, blockNumber uint64) {
+func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint64) {
 	var err error
 
 	metrics.StartLogDiff("traverse-state-trie")
