@@ -41,7 +41,7 @@ func printReport() {
 	// Formatters
 	separatorFmt := "=========================================================================\n\n"
 	iterationsFmt := "%-25s: %12d\n"
-	loggersFmt := "%-25s: %12.0f ns  -> Total: %12d (%d)\n"
+	loggersFmt := "%-25s: %12.0f ns  -> Total: %18d (%d)\n"
 
 	// Actual Content
 	fmt.Printf("Traversal finished\n")
