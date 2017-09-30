@@ -106,26 +106,10 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 		_, err = ipfs.DagGet(c.String())
 		metrics.StopLogDiff("ipfs-dag-get-queries", _l)
 
-		/*
-			fmt.Printf("---> err: %v out: %v\n", err, out)
-
-			found := true
-			if err != nil {
-				if err.Error() == "dag/get: merkledag: not found" {
-					found = false
-				} else {
-					panic(err)
-				}
-			}
-
-			// Stop this iteration if you already have it
-			if found {
-				metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
-				continue
-			}
-		*/
-
-		_ = c
+		// TODO
+		// Some logic to perform a `continue`, and close
+		// the `traverse-state-trie-iteration` metric.
+		// Should be the case we already have this trie root.
 
 		// We don't have it, so,
 		// Let's get that data, then
@@ -137,6 +121,8 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 		metrics.StopLogDiff("geth-leveldb-get-queries", _l)
 		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
 
+		// TODO
+		// Implement import with `ipfs dag put`
 		/*
 
 			// Import it!
