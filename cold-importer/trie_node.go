@@ -101,13 +101,12 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 		}
 		c := cid.NewCidV1(MEthStateTrie, mhash)
 
-		/*
-			// Do we have this merkle trie imported already?
-			_l := metrics.StartLogDiff("ipfs-dag-get-queries")
-			var out interface{}
-			err = ipfs.DagGet(c.String(), out)
-			metrics.StopLogDiff("ipfs-dag-get-queries", _l)
+		// Do we have this merkle trie imported already?
+		_l := metrics.StartLogDiff("ipfs-dag-get-queries")
+		_, err = ipfs.DagGet(c.String())
+		metrics.StopLogDiff("ipfs-dag-get-queries", _l)
 
+		/*
 			fmt.Printf("---> err: %v out: %v\n", err, out)
 
 			found := true
@@ -130,7 +129,7 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 
 		// We don't have it, so,
 		// Let's get that data, then
-		_l := metrics.StartLogDiff("geth-leveldb-get-queries")
+		_l = metrics.StartLogDiff("geth-leveldb-get-queries")
 		val, err := db.Get(key)
 		if err != nil {
 			panic(err)
