@@ -62,20 +62,19 @@ func getBytes() []byte {
         }
         log.Fatal(err)
       }
+      data = append(data[:], buf[:]...)
     }
-    data = buf
   }
 
-  var output []byte
   var err error
   if *isHex == true {
     n := bytes.IndexByte(data, 0)
     s := string(data[:n])
-    output, err = hex.DecodeString(s)
+    data, err = hex.DecodeString(s)
     if err != nil {
       panic(err)
     }
   }
 
-  return output
+  return data
 }
