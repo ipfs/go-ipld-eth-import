@@ -6,8 +6,11 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"os"
 
+	"github.com/beeker1121/goque"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -68,6 +71,21 @@ func main() {
 	stateRoot := header.Root[:]
 	fmt.Printf(hashFmt, "State Root", stateRoot)
 
+	// Additional STEP
+	// Save this header RLP into a file
+	dirPath := fmt.Sprintf("/tmp/get-trie-nodes/%d/0x%s", blockNumber, ethAddress)
+	filePath := fmt.Sprintf("%s/eth-block-header-rlp-%d", dirPath, blockNumber)
+
+	err := os.MkdirAll(dirPath, 0755)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(filePath, headerRLP, 0644)
+	if err != nil {
+		panic(err)
+	}
+
 	// STEP
 	// Compute the keccak256 hash of the ETH Address, to get the path to that data.
 	kb, err := hex.DecodeString(ethAddress)
@@ -79,7 +97,7 @@ func main() {
 
 	// STEP
 	// Traverse the state trie from the root, using the path above.
-	account := db.TraverseToLeaf(stateRoot, stateTriePath)
+	account := db.TraverseToLeaf(stateRoot, stateTriePath, dirPath)
 	fmt.Printf(hashFmt, "Account RLP", account[:32])
 
 	// STEP
@@ -93,11 +111,11 @@ func main() {
 
 	// STEP
 	// We full traverse the whole trie, storing each node as a file, in /tmp.
-	// TODO
+	db.FullTraverseStorageTrie(decodedAccount.Root, dirPath)
 
 	// STEP
 	// We are done. Go grab some beverage of your preference.
-	// TODO
+	fmt.Printf("\nWe are done, check up your files at %s\n", dirPath)
 }
 
 /*
@@ -158,7 +176,7 @@ func (g *gethDB) GetHeaderRLP(hash []byte, number uint64) []byte {
 /*
   TRIE TRAVERSAL HELPERS
 */
-func (g *gethDB) TraverseToLeaf(root []byte, path []byte) []byte {
+func (g *gethDB) TraverseToLeaf(root []byte, path []byte, dirPath string) []byte {
 	var (
 		out []byte
 		i   []interface{}
@@ -181,6 +199,13 @@ func (g *gethDB) TraverseToLeaf(root []byte, path []byte) []byte {
 		}
 
 		raw, err := g.db.Get(root, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		// Let's save these found nodes into files
+		filePath := fmt.Sprintf("%s/eth-state-trie-rlp-%x", dirPath, root[:3])
+		err = ioutil.WriteFile(filePath, raw, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -261,4 +286,127 @@ func getHexIndex(s string) int {
 	}
 
 	return -1
+}
+
+func (g *gethDB) FullTraverseStorageTrie(root []byte, dirPath string) {
+	// Just a separator
+	fmt.Printf("\n")
+
+	stackDirectoryName := "/tmp/trie_stack_data_dir/" + dirPath[len(dirPath)-30:]
+
+	// Clearing the directory if exists, as we want to start always
+	// with a fresh stack database.
+	os.RemoveAll(stackDirectoryName)
+	stack, err := goque.OpenStack(stackDirectoryName)
+	if err != nil {
+		panic(err)
+	}
+	defer stack.Close()
+
+	// Init the traversal with the state root
+	_, err = stack.Push(root[:])
+	if err != nil {
+		panic(err)
+	}
+
+	storageTrieNodeCounter := 0
+
+	for {
+		storageTrieNodeCounter += 1
+		fmt.Printf("Processing Storage Trie Node %d\r", storageTrieNodeCounter)
+
+		// Get the next item from the stack
+		item, err := stack.Pop()
+		if err == goque.ErrEmpty {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+
+		// For easy reading
+		key := item.Value
+
+		// Search the Geth LevelDB for the value
+		val, err := g.db.Get(key, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		// Create a file
+		filePath := fmt.Sprintf("%s/eth-storage-trie-rlp-%x", dirPath, key[:3])
+		err = ioutil.WriteFile(filePath, val, 0644)
+		if err != nil {
+			panic(err)
+		}
+
+		// Process the raw node for children
+		children := processTrieNode(val)
+		if children != nil {
+			for _, child := range children {
+				_, err = stack.Push(child)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+	}
+
+	fmt.Printf("Processed %d Storage Trie Node(s)\n", storageTrieNodeCounter)
+}
+
+func processTrieNode(rlpTrieNode []byte) [][]byte {
+	var (
+		out [][]byte
+		i   []interface{}
+	)
+
+	// Decode the node
+	err := rlp.DecodeBytes(rlpTrieNode, &i)
+	if err != nil {
+		// Zero tolerance, if we have an err here,
+		// it means our source database could be in bad shape.
+		panic(err)
+	}
+
+	switch len(i) {
+	case 2:
+		first := i[0].([]byte)
+		last := i[1].([]byte)
+
+		switch first[0] / 16 {
+		case '\x00':
+			fallthrough
+		case '\x01':
+			// This is an extension
+			out = [][]byte{last}
+		case '\x02':
+			fallthrough
+		case '\x03':
+			// This is a leaf
+			out = nil
+		default:
+			// Zero tolerance
+			panic("unknown hex prefix on trie node")
+		}
+
+	case 17:
+		// This is a branch
+		for _, vi := range i {
+			v := vi.([]byte)
+			switch len(v) {
+			case 0:
+				continue
+			case 32:
+				out = append(out, v)
+			default:
+				panic(fmt.Sprintf("unrecognized object: %v", v))
+			}
+		}
+
+	default:
+		panic("unknown trie node type")
+	}
+
+	return out
 }
