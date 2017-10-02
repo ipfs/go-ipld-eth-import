@@ -18,6 +18,8 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
+// DISCLAIMER: I done worse code
+
 /*
 ## EXAMPLE USAGE
 
