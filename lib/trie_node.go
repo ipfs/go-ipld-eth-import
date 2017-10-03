@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bytes"
@@ -18,13 +18,13 @@ const MEthStateTrie = 0x96
 
 // trieStack wraps the goque stack, enabling the adding of specific
 // methods for dealing with the state trie.
-type trieStack struct {
+type TrieStack struct {
 	*goque.Stack
 }
 
-func NewTrieStack(blockNumber uint64) *trieStack {
+func NewTrieStack(blockNumber uint64) *TrieStack {
 	var err error
-	ts := &trieStack{}
+	ts := &TrieStack{}
 
 	dataDirectoryName := "/tmp/trie_stack_data_dir/" + strconv.FormatUint(blockNumber, 10)
 
@@ -55,7 +55,7 @@ func NewTrieStack(blockNumber uint64) *trieStack {
 
 // TraverseStateTrie, traverses the entire state trie of a given block number
 // from a "cold" geth database
-func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint64) {
+func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint64) {
 	var err error
 
 	metrics.StartLogDiff("traverse-state-trie")
@@ -159,7 +159,7 @@ func (ts *trieStack) TraverseStateTrie(db *gethDB, ipfs *IPFS, blockNumber uint6
 // processTrieNode will decode the given RLP. If the result is a branch or
 // extension, it will return its children hashes, otherwise, nil will
 // be returned.
-func (ts *trieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
+func (ts *TrieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
 	var (
 		out [][]byte
 		i   []interface{}

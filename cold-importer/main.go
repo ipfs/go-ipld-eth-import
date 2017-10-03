@@ -4,8 +4,18 @@ import (
 	"flag"
 	"fmt"
 
+	lib "github.com/ipfs/go-ipld-eth-import/lib"
 	metrics "github.com/ipfs/go-ipld-eth-import/metrics"
 )
+
+/*
+## EXAMPLE USAGE
+
+make cold && ./build/bin/cold-importer \
+	--geth-db-filepath /Users/hj/Documents/tmp/geth-data/geth/chaindata \
+	--ipfs-repo-path ~/.ipfs \
+	--block-number 0
+*/
 
 func main() {
 	var (
@@ -21,19 +31,19 @@ func main() {
 	flag.Parse()
 
 	// IPFS
-	ipfs := ipfsInit(ipfsRepoPath)
+	ipfs := lib.IpfsInit(ipfsRepoPath)
 
 	// Cold Database
-	db := gethDBInitStart(dbFilePath)
+	db := lib.GethDBInit(dbFilePath)
 	defer db.Stop()
 
 	// Launch State Traversal
-	ts := NewTrieStack(blockNumber)
+	ts := lib.NewTrieStack(blockNumber)
 	defer ts.Close()
 
 	ts.TraverseStateTrie(db, ipfs, blockNumber)
 
-	// Print some stats
+	// Print the metrics
 	printReport()
 }
 

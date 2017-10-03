@@ -1,0 +1,22 @@
+{
+  "author": "hj",
+  "bugs": {
+    "url": "https://github.com/ipfs/go-ipld-eth-import/issues"
+  },
+  "gx": {},
+  "gxDependencies": [
+    {
+      "author": "whyrusleeping",
+      "hash": "QmNp85zy9RLrQ5oQD4hPyS39ezrrXpcaa7R4Y9kxdWQLLQ",
+      "name": "go-cid",
+      "version": "0.7.18"
+    }
+  ],
+  "gxVersion": "0.11.0",
+  "language": "go",
+  "license": "",
+  "name": "cold-importer",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
+  "version": "0.0.0"
+}
+

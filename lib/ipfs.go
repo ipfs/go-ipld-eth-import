@@ -1,12 +1,9 @@
-package main
+package lib
 
 import (
 	"context"
 
-	// TODO
-	// Fix the makefile (and README) to use gx to build this package
-	cid "gx/ipfs/QmNp85zy9RLrQ5oQD4hPyS39ezrrXpcaa7R4Y9kxdWQLLQ/go-cid"
-
+	cid "github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 )
@@ -16,7 +13,7 @@ type IPFS struct {
 	ctx context.Context
 }
 
-func ipfsInit(repoPath string) *IPFS {
+func IpfsInit(repoPath string) *IPFS {
 	r, err := fsrepo.Open(repoPath)
 	if err != nil {
 		panic(err)
@@ -49,7 +46,6 @@ func (m *IPFS) HasBlock(cidString string) bool {
 		}
 	}
 
-	// Some output
 	if b != nil {
 		return true
 	}
