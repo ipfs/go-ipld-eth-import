@@ -1,4 +1,4 @@
-# go-ipld-eth-import
+## USAGE
 
 Bring Ethereum to IPFS.
 
