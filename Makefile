@@ -4,7 +4,4 @@ cold:
 clean:
 	rm -rf build/bin/*
 
-docker-cold:
-	 ./docker/build-cold-importer-image.sh
-
-.PHONY: cold clean docker-cold
+.PHONY: cold clean
