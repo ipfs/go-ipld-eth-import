@@ -11,7 +11,6 @@ import (
 	"github.com/ipfs/go-ipfs/commands/files"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coredag"
-	"github.com/ipfs/go-ipfs/pin"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	ipldeth "github.com/ipfs/go-ipld-eth/plugin"
 )
@@ -69,7 +68,7 @@ func (m *IPFS) DagPut(raw []byte, format string) string {
 	mhType := uint64(math.MaxUint64)
 
 	// Stands for --pin ?
-	defer m.n.Blockstore.PinLock().Unlock()
+	//defer m.n.Blockstore.PinLock().Unlock()
 
 	// Convert the raw bytes into a NopCloser, which
 	// in turn will create a file object
@@ -97,11 +96,13 @@ func (m *IPFS) DagPut(raw []byte, format string) string {
 	}
 
 	// Pin it!
-	m.n.Pinning.PinWithMode(nds[0].Cid(), pin.Direct)
-	err = m.n.Pinning.Flush()
-	if err != nil {
-		panic(err)
-	}
+	/*
+		m.n.Pinning.PinWithMode(nds[0].Cid(), pin.Direct)
+		err = m.n.Pinning.Flush()
+		if err != nil {
+			panic(err)
+		}
+	*/
 
 	return nds[0].String()
 }
