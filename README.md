@@ -1,39 +1,33 @@
-# go-ipld-eth-import
+go-ipld-eth-import
+==================
 
-Bring Ethereum to IPFS.
+[![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
+[![](https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square)](http://ipfs.io/)
+[![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23ipfs)
 
-## Cold Importer.
+> go-ipld-eth-import is the set of tools that will help us to bring the Ethereum magic to the IPLD merkle forest.
 
-Grabs the information from a disconnected (hence "_cold_") levelDB from
-go-ethereum and puts it into an IPFS client.
+## Table of Contents
 
-### Information
+- [Install](#install)
+- [Maintainers](#maintainers)
+- [Contribute](#contribute)
+- [License](#license)
 
-* `eth-block`
-  Block header.
-* `eth-tx`
-  Transactions.
-* `eth-tx-trie`
-  Transactions as nodes of the transactions tries.
-* `eth-state-trie`
-  State elements as nodes of the state trie.
-  Its leaves are the ethereum accounts.
+## Maintainers
 
-### Usage
+Captain: [@hermanjunge](https://github.com/hermanjunge)
 
-Compile with `make cold`.
+## Install
 
-Execute doing
+Please check the guide at [this document](USAGE.md).
 
-```
-./build/bin/cold-importer --dbpath <dbpath> --block-number <block-number>
-```
+## Contribute
 
-#### Command Line Parameters
+PRs are welcome!
 
-* `--dbpath`
-  LevelDB
+Small note: If editing the Readme, please conform to the [standard-readme](https://github.com/RichardLitt/standard-readme) specification.
 
-* `--block-number`
-  Specifies the block number data (canonical chain in this db) to fetch.
-  Will default to the latest block if not specified
+## License
+
+MIT © Herman Junge
