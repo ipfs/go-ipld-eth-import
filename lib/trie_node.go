@@ -38,7 +38,7 @@ func NewTrieStack(blockNumber uint64) *TrieStack {
 
 	// Metrics in this operation
 	metrics.NewLogger("traverse-state-trie")
-	metrics.NewLogger("ipfs-dag-get-queries")
+	metrics.NewLogger("ipfs-block-get-queries")
 	metrics.NewLogger("ipfs-dag-put-queries")
 	metrics.NewLogger("geth-leveldb-get-queries")
 	metrics.NewLogger("trie-node-processes")
@@ -102,9 +102,9 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 		c := cid.NewCidV1(MEthStateTrie, mhash)
 
 		// Do we have this node imported already?
-		_l := metrics.StartLogDiff("ipfs-dag-get-queries")
+		_l := metrics.StartLogDiff("ipfs-block-get-queries")
 		blockFound := ipfs.HasBlock(c.String())
-		metrics.StopLogDiff("ipfs-dag-get-queries", _l)
+		metrics.StopLogDiff("ipfs-block-get-queries", _l)
 
 		if blockFound {
 			// Close this iteration metric
@@ -122,19 +122,13 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 		metrics.StopLogDiff("geth-leveldb-get-queries", _l)
 		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
 
-		// TODO
-		// Implement import with `ipfs dag put`
-		/*
-
-			// Import it!
-			_l = metrics.StartLogDiff("ipfs-dag-put-queries")
-			_, err = ipfs.DagPut(val, "raw", "eth-state-trie")
-			if err != nil {
-				panic(err)
-			}
-			metrics.StopLogDiff("ipfs-dag-put-queries", _l)
-
-		*/
+		// Import it!
+		_l = metrics.StartLogDiff("ipfs-dag-put-queries")
+		_ = ipfs.DagPut(val, "eth-state-trie")
+		if err != nil {
+			panic(err)
+		}
+		metrics.StopLogDiff("ipfs-dag-put-queries", _l)
 
 		// Process this element
 		// If it is a branch or an extension, add their children to the stack

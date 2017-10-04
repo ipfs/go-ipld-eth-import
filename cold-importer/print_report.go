@@ -30,8 +30,8 @@ func printReport() {
 	n, sum, avg = metrics.GetAverageLogDiff("traverse-state-trie-iterations")
 	fmt.Printf(loggersFmt, "Avg time per iteration", avg, sum, n)
 
-	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-get-queries")
-	fmt.Printf(loggersFmt, "Avg time ipfs dag get", avg, sum, n)
+	n, sum, avg = metrics.GetAverageLogDiff("ipfs-block-get-queries")
+	fmt.Printf(loggersFmt, "Avg time ipfs block get", avg, sum, n)
 
 	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-put-queries")
 	fmt.Printf(loggersFmt, "Avg time ipfs dag put", avg, sum, n)
