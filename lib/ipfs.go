@@ -97,7 +97,7 @@ func (m *IPFS) DagPut(raw []byte, format string) string {
 	}
 
 	// Pin it!
-	m.n.Pinning.PinWithMode(nds[0].Cid(), pin.Recursive)
+	m.n.Pinning.PinWithMode(nds[0].Cid(), pin.Direct)
 	err = m.n.Pinning.Flush()
 	if err != nil {
 		panic(err)
