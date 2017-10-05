@@ -6,7 +6,7 @@ import (
 	"github.com/ipfs/go-ipld-eth-import/metrics"
 )
 
-func printReport() {
+func printReport(syncMode string) {
 	// Formatters
 	separatorFmt := "=========================================================================\n\n"
 	iterationsFmt := "%-25s: %12d\n"
@@ -30,8 +30,10 @@ func printReport() {
 	n, sum, avg = metrics.GetAverageLogDiff("traverse-state-trie-iterations")
 	fmt.Printf(loggersFmt, "Avg time per iteration", avg, sum, n)
 
-	n, sum, avg = metrics.GetAverageLogDiff("ipfs-block-get-queries")
-	fmt.Printf(loggersFmt, "Avg time ipfs block get", avg, sum, n)
+	if syncMode == "state" {
+		n, sum, avg = metrics.GetAverageLogDiff("ipfs-block-get-queries")
+		fmt.Printf(loggersFmt, "Avg time ipfs block get", avg, sum, n)
+	}
 
 	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-put-queries")
 	fmt.Printf(loggersFmt, "Avg time ipfs dag put", avg, sum, n)

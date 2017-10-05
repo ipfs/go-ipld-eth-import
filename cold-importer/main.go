@@ -45,5 +45,5 @@ func main() {
 	ts.TraverseStateTrie(db, ipfs, syncMode, blockNumber)
 
 	// Print the metrics
-	printReport()
+	printReport(syncMode)
 }
