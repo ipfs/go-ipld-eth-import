@@ -166,7 +166,7 @@ func importToIPFS(ipfs *IPFS, val []byte) {
 
 func findChildrenToStack(ts *TrieStack, rawVal []byte) {
 	_l := metrics.StartLogDiff("trie-node-children-processes")
-	children := processTrieNode(rawVal)
+	children := processTrieNodeChildren(rawVal)
 	if children != nil {
 		for _, child := range children {
 			_, err := ts.Push(child)
@@ -178,10 +178,10 @@ func findChildrenToStack(ts *TrieStack, rawVal []byte) {
 	metrics.StopLogDiff("trie-node-children-processes", _l)
 }
 
-// processTrieNode will decode the given RLP. If the result is a branch or
-// extension, it will return its children hashes, otherwise, nil will
-// be returned.
-func processTrieNode(rlpTrieNode []byte) [][]byte {
+// processTrieNodeChildren will decode the given RLP.
+// If the result is a branch or extension, it will return its
+// children hashes, otherwise, nil will be returned.
+func processTrieNodeChildren(rlpTrieNode []byte) [][]byte {
 	var (
 		out [][]byte
 		i   []interface{}
