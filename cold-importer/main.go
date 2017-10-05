@@ -20,12 +20,14 @@ func main() {
 		blockNumber  uint64
 		ipfsRepoPath string
 		dbFilePath   string
+		syncMode     string
 	)
 
 	// Command line options
 	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
 	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
 	flag.StringVar(&dbFilePath, "geth-db-filepath", "", "Path to the Go-Ethereum Database")
+	flag.StringVar(&syncMode, "sync-mode", "state", "What to synchronize")
 	flag.Parse()
 
 	// IPFS
@@ -35,11 +37,17 @@ func main() {
 	db := lib.GethDBInit(dbFilePath)
 	defer db.Stop()
 
-	// Launch State Traversal
+	// Init the synchronization stack
 	ts := lib.NewTrieStack(blockNumber)
 	defer ts.Close()
 
-	ts.TraverseStateTrie(db, ipfs, blockNumber)
+	// Launch Synchronization
+	switch syncMode {
+	case "state":
+		ts.TraverseStateTrie(db, ipfs, blockNumber)
+	default:
+		panic("Synchronization mode not supported")
+	}
 
 	// Print the metrics
 	printReport()
