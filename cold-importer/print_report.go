@@ -24,6 +24,10 @@ func printReport(syncMode string) {
 	fmt.Printf(iterationsFmt, "  Extensions", metrics.GetCounter("traverse-state-trie-extensions"))
 	fmt.Printf(iterationsFmt, "  Leaves", metrics.GetCounter("traverse-state-trie-leaves"))
 
+	if syncMode == "evmcode" {
+		fmt.Printf(iterationsFmt, "  Smart Contracts", metrics.GetCounter("traverse-state-smart-contracts"))
+	}
+
 	fmt.Printf(separatorFmt)
 
 	// Logger Times
@@ -33,6 +37,11 @@ func printReport(syncMode string) {
 	if syncMode == "state" {
 		n, sum, avg = metrics.GetAverageLogDiff("ipfs-block-get-queries")
 		fmt.Printf(loggersFmt, "Avg time ipfs block get", avg, sum, n)
+	}
+
+	if syncMode == "evmcode" {
+		n, sum, avg = metrics.GetAverageLogDiff("file-creations")
+		fmt.Printf(loggersFmt, "Avg time file creations", avg, sum, n)
 	}
 
 	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-put-queries")

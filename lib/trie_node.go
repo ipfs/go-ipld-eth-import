@@ -3,7 +3,9 @@ package lib
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	goque "github.com/beeker1121/goque"
@@ -49,9 +51,12 @@ func NewTrieStack(blockNumber uint64) *TrieStack {
 	metrics.NewLogger("traverse-state-trie-iterations")
 	metrics.NewLogger("new-nodes-bytes-tranferred")
 
+	metrics.NewLogger("file-creations")
+
 	metrics.NewCounter("traverse-state-trie-branches")
 	metrics.NewCounter("traverse-state-trie-extensions")
 	metrics.NewCounter("traverse-state-trie-leaves")
+	metrics.NewCounter("traverse-state-smart-contracts")
 
 	return ts
 }
@@ -110,7 +115,8 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, syncMode string, 
 
 			// We don't have it. We fetch it from geth and import it.
 			val = fetchFromGethDB(db, item.Value)
-			importToIPFS(ipfs, item.Value)
+			importToIPFS(ipfs, item.Value, "eth-state-trie")
+
 		case "evmcode":
 			// Just fetch the value
 			val = fetchFromGethDB(db, item.Value)
@@ -118,11 +124,14 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, syncMode string, 
 			evmCodeKey := getTrieNodeEVMCode(val)
 			if evmCodeKey != nil {
 				code := fetchFromGethDB(db, evmCodeKey)
-				fmt.Printf("%x\n", code)
-
 				// TODO
-				// Import the code
+				// This should be a command option (--filedump)
+				storeFile("evmcode", item.Value, code)
+				// TODO
+				// And this is the "else" alternative
+				//importToIPFS(ipfs, code, "raw")
 			}
+
 		default:
 			panic("unsupported sync option")
 		}
@@ -158,24 +167,29 @@ func hasTrieNode(ipfs *IPFS, key []byte) bool {
 
 func fetchFromGethDB(db *GethDB, key []byte) []byte {
 	_l := metrics.StartLogDiff("geth-leveldb-get-queries")
+
 	val, err := db.Get(key)
 	if err != nil {
 		panic(err)
 	}
+
 	metrics.StopLogDiff("geth-leveldb-get-queries", _l)
 	metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
 
 	return val
 }
 
-func importToIPFS(ipfs *IPFS, val []byte) {
+func importToIPFS(ipfs *IPFS, val []byte, codec string) {
 	_l := metrics.StartLogDiff("ipfs-dag-put-queries")
-	_ = ipfs.DagPut(val, "eth-state-trie")
+
+	_ = ipfs.DagPut(val, codec)
+
 	metrics.StopLogDiff("ipfs-dag-put-queries", _l)
 }
 
 func findChildrenToStack(ts *TrieStack, rawVal []byte) {
 	_l := metrics.StartLogDiff("trie-node-children-processes")
+
 	children := processTrieNodeChildren(rawVal)
 	if children != nil {
 		for _, child := range children {
@@ -185,7 +199,26 @@ func findChildrenToStack(ts *TrieStack, rawVal []byte) {
 			}
 		}
 	}
+
 	metrics.StopLogDiff("trie-node-children-processes", _l)
+}
+
+func storeFile(kind string, key, contents []byte) {
+	_l := metrics.StartLogDiff("file-creations")
+
+	fileName := fmt.Sprintf("%x", key)
+	fileDir := filepath.Join("/tmp/cold-dump", kind, fileName[0:2], fileName[2:4], fileName[4:6])
+	err := os.MkdirAll(fileDir, 0755)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(filepath.Join(fileDir, fileName), contents, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	metrics.StopLogDiff("file-creations", _l)
 }
 
 // processTrieNodeChildren will decode the given RLP.
@@ -289,8 +322,8 @@ func getTrieNodeEVMCode(rlpTrieNode []byte) []byte {
 
 			codeHash := account[3].([]byte)
 			if bytes.Compare(codeHash, emptyCodeHash) != 0 {
+				metrics.IncCounter("traverse-state-smart-contracts")
 				out = codeHash
-
 			} else {
 				out = nil
 			}
