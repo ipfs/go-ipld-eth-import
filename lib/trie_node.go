@@ -41,7 +41,7 @@ func NewTrieStack(blockNumber uint64) *TrieStack {
 	metrics.NewLogger("ipfs-block-get-queries")
 	metrics.NewLogger("ipfs-dag-put-queries")
 	metrics.NewLogger("geth-leveldb-get-queries")
-	metrics.NewLogger("trie-node-processes")
+	metrics.NewLogger("trie-node-children-processes")
 
 	metrics.NewLogger("traverse-state-trie-iterations")
 	metrics.NewLogger("new-nodes-bytes-tranferred")
@@ -55,8 +55,11 @@ func NewTrieStack(blockNumber uint64) *TrieStack {
 
 // TraverseStateTrie, traverses the entire state trie of a given block number
 // from a "cold" geth database
-func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint64) {
-	var err error
+func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, syncMode string, blockNumber uint64) {
+	var (
+		err error
+		_l  int
+	)
 
 	metrics.StartLogDiff("traverse-state-trie")
 
@@ -79,6 +82,8 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 
 	for {
 		_tsti := metrics.StartLogDiff("traverse-state-trie-iterations")
+
+		// Live counter, to give the lonely user some company
 		fmt.Printf("%d\r", _iterationsCnt)
 		_iterationsCnt += 1
 
@@ -91,49 +96,19 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 			panic(err)
 		}
 
-		// For clarity purposes
-		key := item.Value
-
-		// Create the cid
-		mhash, err := mh.Encode(key, mh.KECCAK_256)
-		if err != nil {
-			panic(err)
-		}
-		c := cid.NewCidV1(MEthStateTrie, mhash)
-
-		// Do we have this node imported already?
-		_l := metrics.StartLogDiff("ipfs-block-get-queries")
-		blockFound := ipfs.HasBlock(c.String())
-		metrics.StopLogDiff("ipfs-block-get-queries", _l)
-
-		if blockFound {
-			// Close this iteration metric
+		// Do not work twice.
+		// Ask the good IPFS Blockstore if we have this key already
+		if hasTrieNode(ipfs, item.Value) {
 			metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
 			continue
 		}
 
-		// We don't have it, so,
-		// Let's get that data, then
-		_l = metrics.StartLogDiff("geth-leveldb-get-queries")
-		val, err := db.Get(key)
-		if err != nil {
-			panic(err)
-		}
-		metrics.StopLogDiff("geth-leveldb-get-queries", _l)
-		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
+		// We don't have it. We fetch it from geth and import it.
+		val := importKey(db, ipfs, item.Value)
 
-		// Import it!
-		_l = metrics.StartLogDiff("ipfs-dag-put-queries")
-		_ = ipfs.DagPut(val, "eth-state-trie")
-		if err != nil {
-			panic(err)
-		}
-		metrics.StopLogDiff("ipfs-dag-put-queries", _l)
-
-		// Process this element
-		// If it is a branch or an extension, add their children to the stack
-		_l = metrics.StartLogDiff("trie-node-processes")
-		children := ts.processTrieNode(val)
+		// Find the children of this element
+		_l = metrics.StartLogDiff("trie-node-children-processes")
+		children := processTrieNode(val)
 		if children != nil {
 			for _, child := range children {
 				_, err = ts.Push(child)
@@ -142,7 +117,7 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 				}
 			}
 		}
-		metrics.StopLogDiff("trie-node-processes", _l)
+		metrics.StopLogDiff("trie-node-children-processes", _l)
 
 		metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
 	}
@@ -150,10 +125,55 @@ func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint6
 	metrics.StopLogDiff("traverse-state-trie", 0)
 }
 
+// hasTrieNode will query our IPFS blockstore, and tell us whether we have
+// this key or not.
+func hasTrieNode(ipfs *IPFS, key []byte) bool {
+	var _l int
+
+	// Create the cid
+	mhash, err := mh.Encode(key, mh.KECCAK_256)
+	if err != nil {
+		panic(err)
+	}
+	c := cid.NewCidV1(MEthStateTrie, mhash)
+
+	// Do we have this node imported already?
+	_l = metrics.StartLogDiff("ipfs-block-get-queries")
+	ipfsBlockFound := ipfs.HasBlock(c.String())
+	metrics.StopLogDiff("ipfs-block-get-queries", _l)
+
+	return ipfsBlockFound
+}
+
+// importKey fetches from geth to import to IPFS.
+func importKey(db *GethDB, ipfs *IPFS, key []byte) []byte {
+	var _l int
+
+	// We don't have it, so,
+	// Let's get that data, then
+	_l = metrics.StartLogDiff("geth-leveldb-get-queries")
+	val, err := db.Get(key)
+	if err != nil {
+		panic(err)
+	}
+	metrics.StopLogDiff("geth-leveldb-get-queries", _l)
+	metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
+
+	// Import it!
+	_l = metrics.StartLogDiff("ipfs-dag-put-queries")
+	_ = ipfs.DagPut(val, "eth-state-trie")
+	if err != nil {
+		panic(err)
+	}
+	metrics.StopLogDiff("ipfs-dag-put-queries", _l)
+
+	return val
+}
+
 // processTrieNode will decode the given RLP. If the result is a branch or
 // extension, it will return its children hashes, otherwise, nil will
 // be returned.
-func (ts *TrieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
+func processTrieNode(rlpTrieNode []byte) [][]byte {
 	var (
 		out [][]byte
 		i   []interface{}

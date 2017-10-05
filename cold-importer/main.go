@@ -42,12 +42,7 @@ func main() {
 	defer ts.Close()
 
 	// Launch Synchronization
-	switch syncMode {
-	case "state":
-		ts.TraverseStateTrie(db, ipfs, blockNumber)
-	default:
-		panic("Synchronization mode not supported")
-	}
+	ts.TraverseStateTrie(db, ipfs, syncMode, blockNumber)
 
 	// Print the metrics
 	printReport()

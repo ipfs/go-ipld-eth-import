@@ -39,7 +39,7 @@ func printReport() {
 	n, sum, avg = metrics.GetAverageLogDiff("geth-leveldb-get-queries")
 	fmt.Printf(loggersFmt, "Avg time levelDB Get()", avg, sum, n)
 
-	n, sum, avg = metrics.GetAverageLogDiff("trie-node-processes")
+	n, sum, avg = metrics.GetAverageLogDiff("trie-node-children-processes")
 	fmt.Printf(loggersFmt, "Avg time Node processing", avg, sum, n)
 
 	fmt.Printf(separatorFmt)

@@ -64,5 +64,9 @@ Execute doing
   This is where you keep your IPFS files. Make sure these are not being used
   by an IPFS client.
 
+* `--sync-mode`
+  Tell the cold-importer what do you want.
+  Supported: `state` (default), `evmcode`.
+
 * `--block-number`
   Specifies the block number data (canonical chain in this db) to fetch.
