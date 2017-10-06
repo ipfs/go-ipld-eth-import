@@ -1,19 +1,37 @@
 package main
 
-import "github.com/ipfs/go-ipld-eth-import/lib"
+import (
+	"flag"
+
+	"github.com/ipfs/go-ipld-eth-import/lib"
+)
 
 /*
 
-- Inicializar el IPFS
-- Traverse por el directorio
-  - file
-    - insertarlo al dag
-    - borrar el archivo
+## EXAMPLE USAGE
+
+make evmcode-ipfs && ./build/bin/evmcode-ipfs --ipfs-repo-path ~/.ipfs
 
 */
 
 func main() {
-	// PLACEHOLDER
-	var _ *lib.IPFS = (*lib.IPFS)(nil)
-	// PLACEHOLDER
+	var (
+		ipfsRepoPath string
+		evmcodeDir   string
+	)
+
+	// Command line options
+	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
+	flag.StringVar(&evmcodeDir, "evmcode-directory", "/tmp/evmcode", "Directory where the EVM code files are")
+	flag.Parse()
+
+	// IPFS
+	ipfs := lib.IpfsInit(ipfsRepoPath)
+
+	// Launch the main loop
+	walker := lib.InitWalker(ipfs)
+	walker.TraverseDirectory(ipfs, evmcodeDir)
+
+	// Print the metrics
+	printReport()
 }
