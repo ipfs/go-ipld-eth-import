@@ -3,16 +3,18 @@ package lib
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/ioutil"
 	"math"
 
 	cid "github.com/ipfs/go-cid"
-
 	"github.com/ipfs/go-ipfs/commands/files"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coredag"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	ipldeth "github.com/ipfs/go-ipld-eth/plugin"
+	node "github.com/ipfs/go-ipld-format"
+	mh "github.com/multiformats/go-multihash"
 )
 
 type IPFS struct {
@@ -37,10 +39,34 @@ func IpfsInit(repoPath string) *IPFS {
 		panic(err)
 	}
 
-	// Also, load the eth-ipld plugins HERE
 	coredag.DefaultInputEncParsers.AddParser("raw", "eth-state-trie", ipldeth.EthStateTrieRawInputParser)
+	coredag.DefaultInputEncParsers.AddParser("raw", "importer-ipld-raw-data", ipldRawNodeInputParser)
 
 	return &IPFS{n: ipfsNode, ctx: ctx}
+}
+
+func ipldRawNodeInputParser(r io.Reader, mhtype uint64, mhLen int) ([]node.Node, error) {
+	rawdata, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+
+	c, err := cid.Prefix{
+		Codec:    0x55,
+		Version:  1,
+		MhType:   mh.KECCAK_256,
+		MhLength: -1,
+	}.Sum(rawdata)
+	if err != nil {
+		panic(err)
+	}
+
+	rawNode := &IpldRawNode{
+		cid:     c,
+		rawdata: rawdata,
+	}
+
+	return []node.Node{rawNode}, nil
 }
 
 func (m *IPFS) HasBlock(cidString string) bool {
@@ -67,9 +93,6 @@ func (m *IPFS) DagPut(raw []byte, format string) string {
 	ienc := "raw"
 	mhType := uint64(math.MaxUint64)
 
-	// Stands for --pin ?
-	//defer m.n.Blockstore.PinLock().Unlock()
-
 	// Convert the raw bytes into a NopCloser, which
 	// in turn will create a file object
 	r := ioutil.NopCloser(bytes.NewReader(raw))
@@ -94,15 +117,6 @@ func (m *IPFS) DagPut(raw []byte, format string) string {
 	if err != nil {
 		panic(err)
 	}
-
-	// Pin it!
-	/*
-		m.n.Pinning.PinWithMode(nds[0].Cid(), pin.Direct)
-		err = m.n.Pinning.Flush()
-		if err != nil {
-			panic(err)
-		}
-	*/
 
 	return nds[0].String()
 }
