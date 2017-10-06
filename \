@@ -1,11 +1,5 @@
-## TODO
-## make all
-## make evmcode-file
-## make state-trie-file
-## make state-trie-ipfs
-
 build-evmcode-ipfs:
-	go build -o build/bin/evmcode-ipfs cold-importer/evmcode-ipfs/*.go
+	go build -o build/bin/cold-importer/evmcode-ipfs cold-importer/evmcode-ipfs/*.go
 
 evmcode-ipfs: hack build-evmcode-ipfs unhack
 
