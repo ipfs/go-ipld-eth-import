@@ -63,7 +63,6 @@ func (w *Walker) processFile(path string, info os.FileInfo, err error) error {
 	// Import it into IPFS
 	_l = metrics.StartLogDiff("ipfs-dag-put")
 	cidString := w.ipfs.DagPut(data, "importer-ipld-raw-data")
-	fmt.Println(cidString)
 	metrics.AddLog("bytes-tranferred", info.Size())
 	metrics.StopLogDiff("ipfs-dag-put", _l)
 
