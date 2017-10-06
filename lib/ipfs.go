@@ -45,6 +45,7 @@ func IpfsInit(repoPath string) *IPFS {
 	return &IPFS{n: ipfsNode, ctx: ctx}
 }
 
+// ipldRawNodeInputParser custom input parser to be able to introduce a 0x55 = keccak256 IPLD BLock
 func ipldRawNodeInputParser(r io.Reader, mhtype uint64, mhLen int) ([]node.Node, error) {
 	rawdata, err := ioutil.ReadAll(r)
 	if err != nil {
