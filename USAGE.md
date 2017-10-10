@@ -4,10 +4,17 @@ Bring Ethereum to IPFS.
 
 ## Cold Importer.
 
-Grabs the information from a disconnected (hence "_cold_") levelDB from
-go-ethereum and puts it into an IPFS client.
+Set of tools that
+
+* Grab the information from a disconnected (hence "_cold_") levelDB from go-ethereum to files.
+* Traverse directories with these files to import them into IPFS.
+
+By separating those functions, and allowing the use of prefixes, these activities can have a degree of scaling.
 
 ### Imported Information
+
+* `evm-code`
+  EVM Code (i.e. Smart Contracts)
 
 * `eth-state-trie`
   State elements as nodes of the state trie.
@@ -21,8 +28,6 @@ go-ethereum and puts it into an IPFS client.
   Transactions.
 * `eth-tx-trie`
   Transactions as nodes of the transactions tries.
-* `evm-code`
-  EVM Code (i.e. Smart Contracts)
 * `eth-storage-trie`
   Storage of the accounts as nodes of its respective trie.
 
@@ -37,23 +42,26 @@ Install the following programs
 	go get -v -u github.com/ipfs/go-ipld-eth
 ```
 
-### Build
+### Importers
 
-Compile with `make cold`.
+#### EVM Code from GethDB to File
 
+##### Build
 
-### Example Usage
+			Compile with `make cold`.
+
+##### Example Usage
 
 Execute doing
 
 ```
-./build/bin/cold-importer \
-	--geth-db-filepath /Users/hj/Documents/tmp/geth-data/geth/chaindata \
-	--ipfs-repo-path ~/.ipfs \
-	--block-number 0
+			./build/bin/cold-importer \
+				--geth-db-filepath /Users/hj/Documents/tmp/geth-data/geth/chaindata \
+				--ipfs-repo-path ~/.ipfs \
+				--block-number 0
 ```
 
-#### Command Line Parameters
+##### Command Line Parameters
 
 * `--geth-db-filepath`
   LevelDB Directory. As it only supports only one process, make sure it is

@@ -8,6 +8,10 @@ import (
 
 /*
 
+## EVM CODE IPFS
+
+Takes the files dumped from the geth database and imports them to IPFS
+
 ## EXAMPLE USAGE
 
 make evmcode-ipfs && ./build/bin/evmcode-ipfs --ipfs-repo-path ~/.ipfs
@@ -26,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	// IPFS
-	ipfs := lib.IpfsInit(ipfsRepoPath)
+	ipfs := lib.InitIPFSNode(ipfsRepoPath)
 
 	// Launch the main loop
 	walker := lib.InitWalker(ipfs)

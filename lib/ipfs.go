@@ -22,7 +22,7 @@ type IPFS struct {
 	ctx context.Context
 }
 
-func IpfsInit(repoPath string) *IPFS {
+func InitIPFSNode(repoPath string) *IPFS {
 	r, err := fsrepo.Open(repoPath)
 	if err != nil {
 		panic(err)
