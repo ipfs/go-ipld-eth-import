@@ -36,10 +36,10 @@ By separating those functions, and allowing the use of prefixes, these activitie
 Install the following programs
 
 ```
-	go get -v -u github.com/whyrusleeping/gx
-	go get -v -u github.com/whyrusleeping/gx-go
+go get -v -u github.com/whyrusleeping/gx
+go get -v -u github.com/whyrusleeping/gx-go
 
-	go get -v -u github.com/ipfs/go-ipld-eth
+go get -v -u github.com/ipfs/go-ipld-eth
 ```
 
 ### Importers
