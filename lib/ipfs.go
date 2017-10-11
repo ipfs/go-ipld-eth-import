@@ -22,6 +22,7 @@ type IPFS struct {
 	ctx context.Context
 }
 
+// InitIPFSNode returns an IPFS node with minimal functionality
 func InitIPFSNode(repoPath string) *IPFS {
 	r, err := fsrepo.Open(repoPath)
 	if err != nil {
@@ -45,7 +46,8 @@ func InitIPFSNode(repoPath string) *IPFS {
 	return &IPFS{n: ipfsNode, ctx: ctx}
 }
 
-// ipldRawNodeInputParser custom input parser to be able to introduce a 0x55 = keccak256 IPLD BLock
+// ipldRawNodeInputParser is a custom input parser
+// to be able to introduce a 0x55 = keccak256 IPLD BLock
 func ipldRawNodeInputParser(r io.Reader, mhtype uint64, mhLen int) ([]node.Node, error) {
 	rawdata, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -89,6 +91,7 @@ func (m *IPFS) HasBlock(cidString string) bool {
 	return false
 }
 
+// DagPut is a stripped down version of the `dag put` command in go-ipfs
 func (m *IPFS) DagPut(raw []byte, format string) string {
 	// Dag Put command options
 	ienc := "raw"
