@@ -74,4 +74,4 @@ Execute doing
 
 * `--prefix`
   Useful to scale the effort: It will only process the files which name starts
-  with the given prefix.
+  with the given prefix. It only support prefixes of two (2) characters (ex: `1a`).

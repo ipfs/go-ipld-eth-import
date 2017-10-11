@@ -15,7 +15,7 @@ func printReport() {
 
 	// Formatters
 	separatorFmt := "=========================================================================\n\n"
-	loggersFmt := "%-25s: %12.0f ns  -> Total: %18d (%d)\n"
+	loggersFmt := "%-27s: %12.0f ns  -> Total: %18d (%d)\n"
 
 	// Actual Content
 	fmt.Printf("Traversal finished\n")
@@ -24,13 +24,13 @@ func printReport() {
 
 	// Logger Times
 	n, sum, avg = metrics.GetAverageLogDiff("process-file")
-	fmt.Printf(loggersFmt, "Avg time per iteration", avg, sum, n)
+	fmt.Printf(loggersFmt, "Avg time per processFile()", avg, sum, n)
 
 	n, sum, avg = metrics.GetAverageLogDiff("read-file")
-	fmt.Printf(loggersFmt, "Avg time per file read", avg, sum, n)
+	fmt.Printf(loggersFmt, "Avg time per readFile()", avg, sum, n)
 
 	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-put")
-	fmt.Printf(loggersFmt, "Avg time ipfs dag put", avg, sum, n)
+	fmt.Printf(loggersFmt, "Avg time per DagPut()", avg, sum, n)
 
 	fmt.Printf(separatorFmt)
 
@@ -39,6 +39,6 @@ func printReport() {
 	fmt.Printf("%-25s: %12d ms\n", "Total Time elapsed", sum/(1000*1000))
 
 	_, sum, avg = metrics.GetAverageLogDiff("bytes-tranferred")
-	fmt.Printf("%-25s: %12d bytes\n", "Total bytes state", sum)
+	fmt.Printf("%-25s: %12d bytes\n", "Total bytes EVM codes", sum)
 	fmt.Printf("%-25s: %12.0f bytes\n", "Average per iteration", avg)
 }

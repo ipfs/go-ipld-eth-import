@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/ipfs/go-ipld-eth-import/lib"
 )
@@ -28,15 +30,21 @@ func main() {
 	// Command line options
 	flag.StringVar(&evmcodeDir, "evmcode-directory", "/tmp/evmcode", "Directory where the EVM code files are")
 	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
-	flag.StringVar(&prefix, "prefix", "", "If set, will only process the files which name starts with <prefix>")
+	flag.StringVar(&prefix, "prefix", "", "If set, will only process the files which name starts with <prefix>. Only two characters supported")
 	flag.Parse()
+
+	// Param check
+	if prefix != "" && len(prefix) != 2 {
+		fmt.Printf("ERROR: Param '--prefix' only supports two characters. Exiting")
+		os.Exit(1)
+	}
 
 	// IPFS
 	ipfs := lib.InitIPFSNode(ipfsRepoPath)
 
 	// Launch the main loop
-	walker := lib.InitWalker(ipfs)
-	walker.TraverseDirectory(ipfs, evmcodeDir)
+	walker := lib.InitWalker(ipfs, evmcodeDir, prefix)
+	walker.TraverseDirectory()
 
 	// Print the metrics
 	printReport()

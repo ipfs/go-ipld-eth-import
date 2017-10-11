@@ -11,12 +11,14 @@ import (
 
 type Walker struct {
 	ipfs                  *IPFS
+	dirPath               string
+	prefix                string
 	iterationCheapCounter int
 }
 
 // InitWalker gives us the Walker object, and set up the metrics
 // of this exercise.
-func InitWalker(ipfs *IPFS) *Walker {
+func InitWalker(ipfs *IPFS, dirPath, prefix string) *Walker {
 	// Metrics in this operation
 	metrics.NewLogger("traverse-directory")
 	metrics.NewLogger("process-file")
@@ -25,18 +27,25 @@ func InitWalker(ipfs *IPFS) *Walker {
 	metrics.NewLogger("bytes-tranferred")
 
 	return &Walker{
-		ipfs: ipfs,
+		ipfs:                  ipfs,
+		dirPath:               dirPath,
+		prefix:                prefix,
 		iterationCheapCounter: 0,
 	}
 }
 
 // TraverseDirectory is the main loop of this importer,
 // it calls processFile as it goes encountering nodes.
-func (w *Walker) TraverseDirectory(ipfs *IPFS, dirPath string) {
+func (w *Walker) TraverseDirectory() {
 	_l := metrics.StartLogDiff("traverse-directory")
 
+	// option --prefix makes the directory walk shorter.
+	if w.prefix != "" {
+		w.dirPath = filepath.Join(w.dirPath, w.prefix)
+	}
+
 	// Walk all files in directory
-	filepath.Walk(dirPath, w.processFile)
+	filepath.Walk(w.dirPath, w.processFile)
 
 	metrics.StopLogDiff("traverse-directory", _l)
 }
