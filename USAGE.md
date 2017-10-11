@@ -48,33 +48,30 @@ Install the following programs
 
 ##### Build
 
-			Compile with `make cold`.
+```
+make evvmcode-ipfs
+```
 
 ##### Example Usage
 
 Execute doing
 
 ```
-			./build/bin/cold-importer \
-				--geth-db-filepath /Users/hj/Documents/tmp/geth-data/geth/chaindata \
-				--ipfs-repo-path ~/.ipfs \
-				--block-number 0
+./build/bin/evmcode-ipfs \
+	--evmcode-directory /Users/hj/Documents/data/cold/evmcode
+	--ipfs-repo-path ~/.ipfs \
+	--prefix 1a
 ```
 
 ##### Command Line Parameters
 
-* `--geth-db-filepath`
-  LevelDB Directory. As it only supports only one process, make sure it is
-  not being used by go-ethereum or other program, hence, this importing is
-  called _cold_.
+* `--evmcode-directory`
+  The directory where the `evmcode` files where dumped after processing the
+  geth levelDB (using `evmcode-file`).
 
 * `--ipfs-repo-path`
-  This is where you keep your IPFS files. Make sure these are not being used
-  by an IPFS client.
+  The IPFS repository. Must be unlocked, i.e. `ipfs daemon` should not be using it.
 
-* `--sync-mode`
-  Tell the cold-importer what do you want.
-  Supported: `state` (default), `evmcode`.
-
-* `--block-number`
-  Specifies the block number data (canonical chain in this db) to fetch.
+* `--prefix`
+  Useful to scale the effort: It will only process the files which name starts
+  with the given prefix.
