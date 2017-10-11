@@ -45,30 +45,37 @@ func (i *IpldRawNode) Loggable() map[string]interface{} {
   Node INTERFACE
 */
 
+// Resolve does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Resolve(p []string) (interface{}, []string, error) {
 	return nil, nil, nil
 }
 
+// Tree does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Tree(p string, depth int) []string {
 	return nil
 }
 
+// ResolveLink does nothing, it is there to comply with the interface
 func (i *IpldRawNode) ResolveLink(p []string) (*node.Link, []string, error) {
 	return nil, nil, nil
 }
 
+// Copy does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Copy() node.Node {
 	return nil
 }
 
+// Links does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Links() []*node.Link {
 	return nil
 }
 
+// Stat does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Stat() (*node.NodeStat, error) {
 	return nil, nil
 }
 
+// Size does nothing, it is there to comply with the interface
 func (i *IpldRawNode) Size() (uint64, error) {
 	return 0, nil
 }
