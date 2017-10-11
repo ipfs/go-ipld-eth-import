@@ -12,7 +12,7 @@ clean-deps:
 
 evmcode-ipfs:
 	build/convert-ipfs-deps.sh
-	go build -o build/bin/evmcode-ipfs cold-importer/evmcode-ipfs/*.go
+	go build -v -o build/bin/evmcode-ipfs cold-importer/evmcode-ipfs/*.go
 	build/un-convert-ipfs-deps.sh
 
 .PHONY: clean clean-deps evmcode-ipfs

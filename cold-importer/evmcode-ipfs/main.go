@@ -20,13 +20,15 @@ make evmcode-ipfs && ./build/bin/evmcode-ipfs --ipfs-repo-path ~/.ipfs
 
 func main() {
 	var (
-		ipfsRepoPath string
 		evmcodeDir   string
+		ipfsRepoPath string
+		prefix       string
 	)
 
 	// Command line options
-	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
 	flag.StringVar(&evmcodeDir, "evmcode-directory", "/tmp/evmcode", "Directory where the EVM code files are")
+	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
+	flag.StringVar(&prefix, "prefix", "", "If set, will only process the files which name starts with <prefix>")
 	flag.Parse()
 
 	// IPFS
