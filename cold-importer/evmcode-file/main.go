@@ -3,47 +3,53 @@ package main
 import (
 	"flag"
 
-	lib "github.com/ipfs/go-ipld-eth-import/lib"
+	"github.com/ipfs/go-ipld-eth-import/lib"
 )
 
 /*
+
+## EVM CODE to FILE
+
+Traverses the entire state of a given block, finding its accounts.
+Whenever it finds an account with a non empty hash (i.e. a smart contract),
+it fetches its contents, dumping them in a file, with its keccak256 hash
+as a name.
+
 ## EXAMPLE USAGE
 
-make cold && ./build/bin/cold-importer \
-	--geth-db-filepath /Users/hj/Documents/tmp/geth-data/geth/chaindata \
-	--ipfs-repo-path ~/.ipfs \
-	--block-number 0
+make evmcode-file && \
+./build/bin/evmcode-file \
+	--block-number 4352702 \
+	--geth-db-filepath /Users/hj/Documents/data/fast-geth/geth/chaindata \
+	--evmcode-directory /tmp/evmcode \
+	--prefix 1a
+
 */
 
 func main() {
 	var (
-		blockNumber  uint64
-		ipfsRepoPath string
-		dbFilePath   string
-		syncMode     string
+		blockNumber uint64
+		dbFilePath  string
 	)
 
 	// Command line options
 	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
-	flag.StringVar(&ipfsRepoPath, "ipfs-repo-path", "~/.ipfs", "IPFS repository path")
 	flag.StringVar(&dbFilePath, "geth-db-filepath", "", "Path to the Go-Ethereum Database")
-	flag.StringVar(&syncMode, "sync-mode", "state", "What to synchronize")
 	flag.Parse()
-
-	// IPFS
-	ipfs := lib.IpfsInit(ipfsRepoPath)
 
 	// Cold Database
 	db := lib.GethDBInit(dbFilePath)
 	defer db.Stop()
 
 	// Init the synchronization stack
-	ts := lib.NewTrieStack(blockNumber)
+	ts := lib.NewTrieStack(db, blockNumber) // Aca colocamos el prefijo y filepath despues
 	defer ts.Close()
 
-	// Launch Synchronization
-	ts.TraverseStateTrie(db, ipfs, syncMode, blockNumber)
+	/*
+		// Launch Synchronization
+		ts.TraverseStateTrie()
 
-	// Print the metrics
-	printReport(syncMode)
+		// Print the metrics
+		printReport()
+	*/
 }
