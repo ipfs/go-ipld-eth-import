@@ -25,12 +25,14 @@ type TrieStack struct {
 	*goque.Stack
 
 	db                    *GethDB
+	evmCodeDir            string
+	firstNibbleInt        int
 	iterationCheapCounter int
 }
 
 // NewTriwStack initializes the traversal stack, and finds the canonical
 // block header, returning the TrieStack wrapper for further instructions
-func NewTrieStack(db *GethDB, blockNumber uint64) *TrieStack {
+func NewTrieStack(db *GethDB, blockNumber uint64, evmCodeDir, nibble string) *TrieStack {
 	var err error
 	ts := &TrieStack{}
 
@@ -74,12 +76,33 @@ func NewTrieStack(db *GethDB, blockNumber uint64) *TrieStack {
 		panic(err)
 	}
 
+	// Assign these variables
+	ts.evmCodeDir = evmCodeDir
+
+	if len(nibble) > 1 {
+		panic("unsupported nibble lenght")
+	}
+	if len(nibble) == 1 {
+		n := nibble[0]
+		switch {
+		case n >= '0' && n <= '9':
+			ts.firstNibbleInt = int(n - 48)
+		case n >= 'a' && n <= 'f':
+			ts.firstNibbleInt = int(n + 10 - 97)
+		default:
+			panic("wrong value for nibble")
+		}
+	} else {
+		ts.firstNibbleInt = -1
+	}
+
 	// Return the wrapped object
 	ts.iterationCheapCounter = 0
 	return ts
 }
 
-// TODO: Document
+// TraverseStateTrie performs a stack assisted traversal
+// over the state trie node.
 func (ts *TrieStack) TraverseStateTrie() {
 	_l := metrics.StartLogDiff("traverse-state-trie")
 
@@ -97,7 +120,8 @@ func (ts *TrieStack) TraverseStateTrie() {
 	metrics.StopLogDiff("traverse-state-trie", _l)
 }
 
-// TODO Document
+// traverseStateTrieIteration is the atomic component of the
+// loop in TraverseStateTrie.
 func (ts *TrieStack) traverseStateTrieIteration() error {
 	_l := metrics.StartLogDiff("traverse-state-trie-iterations")
 
@@ -114,23 +138,24 @@ func (ts *TrieStack) traverseStateTrieIteration() error {
 	evmCodeKey := getTrieNodeEVMCode(val)
 	if evmCodeKey != nil {
 		code := ts.fetchFromGethDB(evmCodeKey)
-		storeFile("evmcode", item.Value, code)
+		ts.storeFile(item.Value, code)
 	}
 
 	// Find the children of this element.
 	// If found, they will be pushed in the stack.
-	findChildrenToStack(ts, val)
+	ts.findChildrenToStack(val)
 
 	metrics.StopLogDiff("traverse-state-trie-iterations", _l)
 	return nil
 }
 
 // liveCounter gives the lonely user some company
-func (t *TrieStack) liveCounter() {
-	t.iterationCheapCounter += 1
-	fmt.Printf("%d\r", t.iterationCheapCounter)
+func (ts *TrieStack) liveCounter() {
+	ts.iterationCheapCounter += 1
+	fmt.Printf("%d\r", ts.iterationCheapCounter)
 }
 
+// fetchFromGethDB returns the value from the cold LevelDB.
 func (ts *TrieStack) fetchFromGethDB(key []byte) []byte {
 	_l := metrics.StartLogDiff("geth-leveldb-get-queries")
 
@@ -144,12 +169,25 @@ func (ts *TrieStack) fetchFromGethDB(key []byte) []byte {
 	return val
 }
 
-func findChildrenToStack(ts *TrieStack, rawVal []byte) {
+// findChildrenToStack evaluates a trie node. If it finds any
+// children, it will add them to the stack, to follow the traversal.
+func (ts *TrieStack) findChildrenToStack(rawVal []byte) {
 	_l := metrics.StartLogDiff("trie-node-children-processes")
 
 	children := getTrieNodeChildren(rawVal)
 	if children != nil {
-		for _, child := range children {
+		for idx, child := range children {
+			// If we are in the first iteration (i.e. the root),
+			// we see whether --nibble is set. If so, process only the given one.
+			if ts.iterationCheapCounter == 1 && ts.firstNibbleInt != -1 {
+				if idx != ts.firstNibbleInt {
+					continue
+				}
+				// Tell the user what's going on
+				fmt.Printf("Reduced traversing from the root, down to %d\n",
+					ts.firstNibbleInt)
+			}
+
 			_, err := ts.Push(child)
 			if err != nil {
 				panic(err)
@@ -160,11 +198,15 @@ func findChildrenToStack(ts *TrieStack, rawVal []byte) {
 	metrics.StopLogDiff("trie-node-children-processes", _l)
 }
 
-func storeFile(kind string, key, contents []byte) {
+// storeFile will take the trie node contents, and store them into
+// the file system, with the given key as a file name.
+// It will take the first three bytes as subdirectories,
+// to make its lookup easier.
+func (ts *TrieStack) storeFile(key, contents []byte) {
 	_l := metrics.StartLogDiff("file-creations")
 
 	fileName := fmt.Sprintf("%x", key)
-	fileDir := filepath.Join("/tmp/cold-dump", kind, fileName[0:2], fileName[2:4], fileName[4:6])
+	fileDir := filepath.Join(ts.evmCodeDir, fileName[0:2], fileName[2:4], fileName[4:6])
 	err := os.MkdirAll(fileDir, 0755)
 	if err != nil {
 		panic(err)
