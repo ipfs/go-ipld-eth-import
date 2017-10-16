@@ -49,6 +49,42 @@ go get -v -u github.com/ipfs/go-ipld-eth
 ##### Build
 
 ```
+make evmcode-file
+```
+
+##### Example Usage
+
+```
+./build/bin/evmcode-file \
+	--block-number 4339465 \
+	--geth-db-filepath /Users/hj/Documents/data/fast-geth/geth/chaindata \
+	--evmcode-directory /tmp/evmcode \
+	--nibble 2
+```
+
+##### Command Line Parameters
+
+* `--block-number`
+  Specifies the block number data (canonical chain in this db) to fetch.
+
+* `--geth-db-filepath`
+  LevelDB Directory. As it only supports only one process, make sure it is
+  not being used by go-ethereum or other program, hence, this importing is
+  called _cold_.
+
+* `--evmcode-directory`
+  The directory where the `evmcode` files will be dumped.
+
+* `--nibble`
+  Supports just one nibble (hex character). If set, it will traverse the state
+  trie down the chosen branch of the root, making your processing time about
+  `15/16` faster.
+
+#### EVM Code from File to IPFS
+
+##### Build
+
+```
 make evvmcode-ipfs
 ```
 
