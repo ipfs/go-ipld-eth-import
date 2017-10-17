@@ -28,13 +28,9 @@ state-trie-file:
 
 vet:
 	build/convert-ipfs-deps.sh
-	@echo unused
 	unused ./...
-	@echo staticcheck
 	staticcheck ./...
-	@echo gosimple
 	gosimple ./...
-	@echo golint
 	golint ./...
 	build/un-convert-ipfs-deps.sh
 
