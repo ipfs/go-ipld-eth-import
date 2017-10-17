@@ -58,7 +58,7 @@ make evmcode-file
 ./build/bin/evmcode-file \
 	--block-number 4339465 \
 	--geth-db-filepath /Users/hj/Documents/data/fast-geth/geth/chaindata \
-	--evmcode-directory /tmp/evmcode \
+	--dump-directory /tmp/evmcode \
 	--nibble 2
 ```
 
@@ -72,7 +72,7 @@ make evmcode-file
   not being used by go-ethereum or other program, hence, this importing is
   called _cold_.
 
-* `--evmcode-directory`
+* `--dump-directory`
   The directory where the `evmcode` files will be dumped.
 
 * `--nibble`
@@ -111,3 +111,39 @@ Execute doing
 * `--prefix`
   Useful to scale the effort: It will only process the files which name starts
   with the given prefix. It only support prefixes of two (2) characters (ex: `1a`).
+
+#### State Trie Nodes from GethDB to File
+
+##### Build
+
+```
+make state-trie-file
+```
+
+##### Example Usage
+
+```
+./build/bin/state-trie-file \
+	--block-number 4371405 \
+	--geth-db-filepath /Users/hj/Documents/data/fast-geth/geth/chaindata \
+	--dump-directory /tmp/state-trie \
+	--nibble 2
+```
+
+##### Command Line Parameters
+
+* `--block-number`
+  Specifies the block number data (canonical chain in this db) to fetch.
+
+* `--geth-db-filepath`
+  LevelDB Directory. As it only supports only one process, make sure it is
+  not being used by go-ethereum or other program, hence, this importing is
+  called _cold_.
+
+* `--dump-directory`
+  The directory where the `state trie node` files will be dumped.
+
+* `--nibble`
+  Supports just one nibble (hex character). If set, it will traverse the state
+  trie down the chosen branch of the root, making your processing time about
+  `15/16` faster.

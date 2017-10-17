@@ -21,8 +21,8 @@ make evmcode-file && \
 ./build/bin/evmcode-file \
 	--block-number 4352702 \
 	--geth-db-filepath /Users/hj/Documents/data/fast-geth/geth/chaindata \
-	--evmcode-directory /tmp/evmcode \
-	--nibble 1a
+	--dump-directory /tmp/evmcode \
+	--nibble 2
 
 */
 
@@ -30,14 +30,14 @@ func main() {
 	var (
 		blockNumber uint64
 		dbFilePath  string
-		evmCodeDir  string
+		dumpDir     string
 		nibble      string
 	)
 
 	// Command line options
 	flag.Uint64Var(&blockNumber, "block-number", 0, "Canonical number of the block state to import")
 	flag.StringVar(&dbFilePath, "geth-db-filepath", "", "Path to the Go-Ethereum Database")
-	flag.StringVar(&evmCodeDir, "evmcode-directory", "/tmp/evmcode", "Path to the directory to create the files to be dumped")
+	flag.StringVar(&dumpDir, "dump-directory", "/tmp/evmcode", "Path to the directory to dump the files")
 	flag.StringVar(&nibble, "nibble", "",
 		"If set, selects one of the 16 branches of the state root. Only support one nibble {0,1,2,3,4,5,6,7,8,9,0,a,b,c,d,e,f}")
 	flag.Parse()
@@ -47,7 +47,7 @@ func main() {
 	defer db.Stop()
 
 	// Init the synchronization stack
-	ts := lib.NewTrieStack(db, blockNumber, evmCodeDir, nibble)
+	ts := lib.NewTrieStack(db, blockNumber, dumpDir, nibble, "evmcode")
 	defer ts.Close()
 
 	// Launch Synchronization

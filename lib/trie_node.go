@@ -25,14 +25,15 @@ type TrieStack struct {
 	*goque.Stack
 
 	db                    *GethDB
-	evmCodeDir            string
+	dumpDir               string
+	operation             string
 	firstNibbleInt        int
 	iterationCheapCounter int
 }
 
 // NewTriwStack initializes the traversal stack, and finds the canonical
 // block header, returning the TrieStack wrapper for further instructions
-func NewTrieStack(db *GethDB, blockNumber uint64, evmCodeDir, nibble string) *TrieStack {
+func NewTrieStack(db *GethDB, blockNumber uint64, dumpDir, nibble, operation string) *TrieStack {
 	var err error
 	ts := &TrieStack{}
 
@@ -77,7 +78,16 @@ func NewTrieStack(db *GethDB, blockNumber uint64, evmCodeDir, nibble string) *Tr
 	}
 
 	// Assign these variables
-	ts.evmCodeDir = evmCodeDir
+	ts.dumpDir = dumpDir
+
+	switch operation {
+	case "evmcode":
+		ts.operation = "evmcode"
+	case "state-trie":
+		ts.operation = "state-trie"
+	default:
+		panic("operation not supported")
+	}
 
 	if len(nibble) > 1 {
 		panic("unsupported nibble lenght")
@@ -130,15 +140,23 @@ func (ts *TrieStack) traverseStateTrieIteration() error {
 	if err != nil {
 		return err
 	}
+	// This clarifies a bit the code below
+	key := item.Value
 
 	// Fetch the value
-	val := ts.fetchFromGethDB(item.Value)
+	val := ts.fetchFromGethDB(key)
 
-	// If it is a leaf, we will get its EVM Code
-	evmCodeKey := getTrieNodeEVMCode(val)
-	if evmCodeKey != nil {
-		code := ts.fetchFromGethDB(evmCodeKey)
-		ts.storeFile(item.Value, code)
+	switch ts.operation {
+	case "evmcode":
+		// If it is a leaf, we will get its EVM Code
+		evmCodeKey := getTrieNodeEVMCode(val)
+		if evmCodeKey != nil {
+			code := ts.fetchFromGethDB(evmCodeKey)
+			ts.storeFile(crypto.Keccak256(code), code)
+		}
+	case "state-trie":
+		// Just store the found element
+		ts.storeFile(key, val)
 	}
 
 	// Find the children of this element.
@@ -206,7 +224,7 @@ func (ts *TrieStack) storeFile(key, contents []byte) {
 	_l := metrics.StartLogDiff("file-creations")
 
 	fileName := fmt.Sprintf("%x", key)
-	fileDir := filepath.Join(ts.evmCodeDir, fileName[0:2], fileName[2:4], fileName[4:6])
+	fileDir := filepath.Join(ts.dumpDir, fileName[0:2], fileName[2:4], fileName[4:6])
 	err := os.MkdirAll(fileDir, 0755)
 	if err != nil {
 		panic(err)
