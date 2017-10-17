@@ -14,13 +14,13 @@ func printReport() {
 	)
 
 	// Formatters
-	separatorFmt := "=========================================================================\n\n"
+	separatorFmt := "=========================================================================\n"
 	loggersFmt := "%-27s: %12.0f ns  -> Total: %18d (%d)\n"
 
 	// Actual Content
 	fmt.Printf("Traversal finished\n")
 
-	fmt.Printf(separatorFmt)
+	fmt.Println(separatorFmt)
 
 	// Logger Times
 	n, sum, avg = metrics.GetAverageLogDiff("process-file")
@@ -32,7 +32,7 @@ func printReport() {
 	n, sum, avg = metrics.GetAverageLogDiff("ipfs-dag-put")
 	fmt.Printf(loggersFmt, "Avg time per DagPut()", avg, sum, n)
 
-	fmt.Printf(separatorFmt)
+	fmt.Println(separatorFmt)
 
 	// Totals
 	_, sum, _ = metrics.GetAverageLogDiff("traverse-directory")

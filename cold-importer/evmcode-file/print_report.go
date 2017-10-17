@@ -7,27 +7,33 @@ import (
 )
 
 func printReport() {
+	var (
+		n   int
+		sum int64
+		avg float64
+	)
+
 	// Formatters
-	separatorFmt := "=========================================================================\n\n"
+	separatorFmt := "=========================================================================\n"
 	iterationsFmt := "%-25s: %12d\n"
 	loggersFmt := "%-25s: %12.0f ns  -> Total: %18d (%d)\n"
 
 	// Actual Content
 	fmt.Printf("Traversal finished\n")
 
-	fmt.Printf(separatorFmt)
+	fmt.Println(separatorFmt)
 
 	// Iterations
 	// Count per kind of trie node
 	// Count of smart contracts
-	n, sum, avg := metrics.GetAverageLogDiff("traverse-state-trie-iterations")
+	n, _, _ = metrics.GetAverageLogDiff("traverse-state-trie-iterations")
 	fmt.Printf(iterationsFmt, "Number of iterations", n)
 	fmt.Printf(iterationsFmt, "  Branches", metrics.GetCounter("traverse-state-trie-branches"))
 	fmt.Printf(iterationsFmt, "  Extensions", metrics.GetCounter("traverse-state-trie-extensions"))
 	fmt.Printf(iterationsFmt, "  Leaves", metrics.GetCounter("traverse-state-trie-leaves"))
 	fmt.Printf(iterationsFmt, "  Smart Contracts", metrics.GetCounter("traverse-state-smart-contracts"))
 
-	fmt.Printf(separatorFmt)
+	fmt.Println(separatorFmt)
 
 	// Logger Times (quantity, average, sum)
 	n, sum, avg = metrics.GetAverageLogDiff("traverse-state-trie-iterations")
@@ -39,7 +45,7 @@ func printReport() {
 	n, sum, avg = metrics.GetAverageLogDiff("trie-node-children-processes")
 	fmt.Printf(loggersFmt, "Avg time Node processing", avg, sum, n)
 
-	fmt.Printf(separatorFmt)
+	fmt.Println(separatorFmt)
 
 	// Totals
 	_, sum, _ = metrics.GetAverageLogDiff("traverse-state-trie")

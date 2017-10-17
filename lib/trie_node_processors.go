@@ -108,7 +108,7 @@ func getTrieNodeEVMCode(rlpTrieNode []byte) []byte {
 			}
 
 			codeHash := account[3].([]byte)
-			if bytes.Compare(codeHash, emptyCodeHash) != 0 {
+			if !bytes.Equal(codeHash, emptyCodeHash) {
 				metrics.IncCounter("traverse-state-smart-contracts")
 				out = codeHash
 			} else {
