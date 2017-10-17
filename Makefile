@@ -26,4 +26,16 @@ state-trie-file:
 	go build -v -o build/bin/state-trie-file cold-importer/state-trie-file/*.go
 	build/un-convert-ipfs-deps.sh
 
-.PHONY: all lean clean-deps evmcode-file evmcode-ipfs state-trie-file
+vet:
+	build/convert-ipfs-deps.sh
+	@echo unused
+	unused ./...
+	@echo staticcheck
+	staticcheck ./...
+	@echo gosimple
+	gosimple ./...
+	@echo golint
+	golint ./...
+	build/un-convert-ipfs-deps.sh
+
+.PHONY: all lean clean-deps evmcode-file evmcode-ipfs state-trie-file vet
