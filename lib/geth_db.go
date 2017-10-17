@@ -8,6 +8,8 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
+// GethDB is a wrapper to the leveldb connection object,
+// allowing for the definition of additional methods.
 type GethDB struct {
 	db *leveldb.DB
 }

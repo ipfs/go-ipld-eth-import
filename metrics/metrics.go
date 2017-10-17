@@ -10,6 +10,9 @@ Package metrics wants to help us to know what's going on.
 We'll try to keep it simple.
 */
 
+// Data has all the metrics data in memory. It has counters and loggers.
+// The formers can only be incremented or decreased, while the latter
+// can used to get time differences.
 type Data struct {
 	// This is just a map of `+1` counters. You know.
 	// How many iterations? How many cases of A? etc.
@@ -35,18 +38,21 @@ func init() {
  COUNTERS
 */
 
+// NewCounter returns a counter with the given key.
 func NewCounter(key string) {
 	if _, ok := data.counters[key]; !ok {
 		data.counters[key] = 0
 	}
 }
 
+// IncCounter increments the given counter by 1.
 func IncCounter(key string) {
 	if _, ok := data.counters[key]; ok {
-		data.counters[key] += 1
+		data.counters[key]++
 	}
 }
 
+// GetCounter returns the current value of the given counter.
 func GetCounter(key string) int {
 	if val, ok := data.counters[key]; ok {
 		return val
@@ -58,6 +64,7 @@ func GetCounter(key string) int {
   LOGGERS
 */
 
+// NewLogger returns a logger.
 func NewLogger(key string) {
 	if _, ok := data.loggers[key]; !ok {
 		var slice []int64
@@ -65,6 +72,8 @@ func NewLogger(key string) {
 	}
 }
 
+// AddLog adds an int64 value to the logger. Useful for
+// aggregations, such as the total number of bytes stored.
 func AddLog(key string, val int64) {
 	if _, ok := data.loggers[key]; ok {
 		data.loggers[key] = append(data.loggers[key], val)
@@ -85,6 +94,7 @@ func StartLogDiff(key string) int {
 	return -1
 }
 
+// StopLogDiff completed the functionality documented by StartLogDiff.
 func StopLogDiff(key string, idx int) {
 	if _, ok := data.loggers[key]; ok {
 		if len(data.loggers[key]) > idx {
@@ -104,7 +114,7 @@ func GetAverageLogDiff(key string) (int, int64, float64) {
 		for _, v := range data.loggers[key] {
 			if v >= 0 {
 				sum += v
-				n += 1
+				n++
 			}
 		}
 

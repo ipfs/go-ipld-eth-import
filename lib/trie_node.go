@@ -15,6 +15,7 @@ import (
 	metrics "github.com/ipfs/go-ipld-eth-import/metrics"
 )
 
+// MEthStateTrie is the cid codec for a Ethereum State Trie.
 const MEthStateTrie = 0x96
 
 var emptyCodeHash = crypto.Keccak256(nil)
@@ -31,7 +32,7 @@ type TrieStack struct {
 	iterationCheapCounter int
 }
 
-// NewTriwStack initializes the traversal stack, and finds the canonical
+// NewTrieStack initializes the traversal stack, and finds the canonical
 // block header, returning the TrieStack wrapper for further instructions
 func NewTrieStack(db *GethDB, blockNumber uint64, dumpDir, nibble, operation string) *TrieStack {
 	var err error
@@ -169,7 +170,7 @@ func (ts *TrieStack) traverseStateTrieIteration() error {
 
 // liveCounter gives the lonely user some company
 func (ts *TrieStack) liveCounter() {
-	ts.iterationCheapCounter += 1
+	ts.iterationCheapCounter++
 	fmt.Printf("%d\r", ts.iterationCheapCounter)
 }
 

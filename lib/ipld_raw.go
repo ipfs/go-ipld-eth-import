@@ -7,6 +7,8 @@ import (
 	node "github.com/ipfs/go-ipld-format"
 )
 
+// IpldRawNode allows us to import a 0x55 element by
+// complying with the IPLD format interface.
 type IpldRawNode struct {
 	cid     *cid.Cid
 	rawdata []byte

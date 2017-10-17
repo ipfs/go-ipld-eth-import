@@ -9,6 +9,9 @@ import (
 	"github.com/ipfs/go-ipld-eth-import/metrics"
 )
 
+// Walker will traverse a directory and import the found files
+// into IPFS using a stripped down version of DagPut.
+// A prefix can also be setup to allow to some form of scalability.
 type Walker struct {
 	ipfs                  *IPFS
 	dirPath               string
@@ -77,7 +80,7 @@ func (w *Walker) processFile(path string, info os.FileInfo, err error) error {
 
 // liveCounter gives the lonely user some company
 func (w *Walker) liveCounter() {
-	w.iterationCheapCounter += 1
+	w.iterationCheapCounter++
 	fmt.Printf("%d\r", w.iterationCheapCounter)
 }
 

@@ -17,6 +17,7 @@ import (
 	mh "github.com/multiformats/go-multihash"
 )
 
+// IPFS wraps an ipfs node and its context.
 type IPFS struct {
 	n   *core.IpfsNode
 	ctx context.Context
@@ -70,25 +71,6 @@ func ipldRawNodeInputParser(r io.Reader, mhtype uint64, mhLen int) ([]node.Node,
 	}
 
 	return []node.Node{rawNode}, nil
-}
-
-func (m *IPFS) HasBlock(cidString string) bool {
-	c, err := cid.Decode(cidString)
-	if err != nil {
-		panic(err)
-	}
-
-	b, err := m.n.Blocks.GetBlock(m.ctx, c)
-	if err != nil {
-		if err.Error() != "blockservice: key not found" {
-			panic(err)
-		}
-	}
-
-	if b != nil {
-		return true
-	}
-	return false
 }
 
 // DagPut is a stripped down version of the `dag put` command in go-ipfs
