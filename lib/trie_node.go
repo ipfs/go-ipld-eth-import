@@ -3,29 +3,57 @@ package lib
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	goque "github.com/beeker1121/goque"
 	types "github.com/ethereum/go-ethereum/core/types"
+	crypto "github.com/ethereum/go-ethereum/crypto"
 	rlp "github.com/ethereum/go-ethereum/rlp"
-	cid "github.com/ipfs/go-cid"
 	metrics "github.com/ipfs/go-ipld-eth-import/metrics"
-	mh "github.com/multiformats/go-multihash"
 )
 
+// MEthStateTrie is the cid codec for a Ethereum State Trie.
 const MEthStateTrie = 0x96
 
-// trieStack wraps the goque stack, enabling the adding of specific
+var emptyCodeHash = crypto.Keccak256(nil)
+
+// TrieStack wraps the goque stack, enabling the adding of specific
 // methods for dealing with the state trie.
 type TrieStack struct {
 	*goque.Stack
+
+	db                    *GethDB
+	dumpDir               string
+	operation             string
+	firstNibbleInt        int
+	iterationCheapCounter int
 }
 
-func NewTrieStack(blockNumber uint64) *TrieStack {
+// NewTrieStack initializes the traversal stack, and finds the canonical
+// block header, returning the TrieStack wrapper for further instructions
+func NewTrieStack(db *GethDB, blockNumber uint64, dumpDir, nibble, operation string) *TrieStack {
 	var err error
 	ts := &TrieStack{}
 
+	// Metrics in this operation
+	metrics.NewLogger("traverse-state-trie")
+	metrics.NewLogger("geth-leveldb-get-queries")
+	metrics.NewLogger("trie-node-children-processes")
+	metrics.NewLogger("traverse-state-trie-iterations")
+	metrics.NewLogger("new-nodes-bytes-tranferred")
+	metrics.NewLogger("file-creations")
+	metrics.NewCounter("traverse-state-trie-branches")
+	metrics.NewCounter("traverse-state-trie-extensions")
+	metrics.NewCounter("traverse-state-trie-leaves")
+	metrics.NewCounter("traverse-state-smart-contracts")
+
+	// Add the reference to the database
+	ts.db = db
+
+	// Hardcoded stack directory. Sue me
 	dataDirectoryName := "/tmp/trie_stack_data_dir/" + strconv.FormatUint(blockNumber, 10)
 
 	// Clearing the directory if exists, as we want to start always
@@ -36,179 +64,177 @@ func NewTrieStack(blockNumber uint64) *TrieStack {
 		panic(err)
 	}
 
-	// Metrics in this operation
-	metrics.NewLogger("traverse-state-trie")
-	metrics.NewLogger("ipfs-block-get-queries")
-	metrics.NewLogger("ipfs-dag-put-queries")
-	metrics.NewLogger("geth-leveldb-get-queries")
-	metrics.NewLogger("trie-node-processes")
-
-	metrics.NewLogger("traverse-state-trie-iterations")
-	metrics.NewLogger("new-nodes-bytes-tranferred")
-
-	metrics.NewCounter("traverse-state-trie-branches")
-	metrics.NewCounter("traverse-state-trie-extensions")
-	metrics.NewCounter("traverse-state-trie-leaves")
-
-	return ts
-}
-
-// TraverseStateTrie, traverses the entire state trie of a given block number
-// from a "cold" geth database
-func (ts *TrieStack) TraverseStateTrie(db *GethDB, ipfs *IPFS, blockNumber uint64) {
-	var err error
-
-	metrics.StartLogDiff("traverse-state-trie")
-
-	// From the block number, we get its canonical hash, and header RLP
+	// Find the block header RLP we need
 	blockHash := db.GetCanonicalHash(blockNumber)
 	headerRLP := db.GetHeaderRLP(blockHash, blockNumber)
-
 	header := new(types.Header)
-	if err = rlp.Decode(bytes.NewReader(headerRLP), header); err != nil {
+	if err := rlp.Decode(bytes.NewReader(headerRLP), header); err != nil {
 		panic(err)
 	}
 
-	// Init the traversal with the state root
+	// Finally, Init the traversal with the state root
 	_, err = ts.Push(header.Root[:])
 	if err != nil {
 		panic(err)
 	}
 
-	_iterationsCnt := 1
+	// Assign these variables
+	ts.dumpDir = dumpDir
+
+	switch operation {
+	case "evmcode":
+		ts.operation = "evmcode"
+	case "state-trie":
+		ts.operation = "state-trie"
+	default:
+		panic("operation not supported")
+	}
+
+	if len(nibble) > 1 {
+		panic("unsupported nibble lenght")
+	}
+	if len(nibble) == 1 {
+		n := nibble[0]
+		switch {
+		case n >= '0' && n <= '9':
+			ts.firstNibbleInt = int(n - 48)
+		case n >= 'a' && n <= 'f':
+			ts.firstNibbleInt = int(n + 10 - 97)
+		default:
+			panic("wrong value for nibble")
+		}
+	} else {
+		ts.firstNibbleInt = -1
+	}
+
+	// Return the wrapped object
+	ts.iterationCheapCounter = 0
+	return ts
+}
+
+// TraverseStateTrie performs a stack assisted traversal
+// over the state trie node.
+func (ts *TrieStack) TraverseStateTrie() {
+	_l := metrics.StartLogDiff("traverse-state-trie")
 
 	for {
-		_tsti := metrics.StartLogDiff("traverse-state-trie-iterations")
-		fmt.Printf("%d\r", _iterationsCnt)
-		_iterationsCnt += 1
-
-		// Get the next item from the stack
-		item, err := ts.Pop()
+		ts.liveCounter()
+		err := ts.traverseStateTrieIteration()
 		if err == goque.ErrEmpty {
 			break
 		}
 		if err != nil {
 			panic(err)
 		}
-
-		// For clarity purposes
-		key := item.Value
-
-		// Create the cid
-		mhash, err := mh.Encode(key, mh.KECCAK_256)
-		if err != nil {
-			panic(err)
-		}
-		c := cid.NewCidV1(MEthStateTrie, mhash)
-
-		// Do we have this node imported already?
-		_l := metrics.StartLogDiff("ipfs-block-get-queries")
-		blockFound := ipfs.HasBlock(c.String())
-		metrics.StopLogDiff("ipfs-block-get-queries", _l)
-
-		if blockFound {
-			// Close this iteration metric
-			metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
-			continue
-		}
-
-		// We don't have it, so,
-		// Let's get that data, then
-		_l = metrics.StartLogDiff("geth-leveldb-get-queries")
-		val, err := db.Get(key)
-		if err != nil {
-			panic(err)
-		}
-		metrics.StopLogDiff("geth-leveldb-get-queries", _l)
-		metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
-
-		// Import it!
-		_l = metrics.StartLogDiff("ipfs-dag-put-queries")
-		_ = ipfs.DagPut(val, "eth-state-trie")
-		if err != nil {
-			panic(err)
-		}
-		metrics.StopLogDiff("ipfs-dag-put-queries", _l)
-
-		// Process this element
-		// If it is a branch or an extension, add their children to the stack
-		_l = metrics.StartLogDiff("trie-node-processes")
-		children := ts.processTrieNode(val)
-		if children != nil {
-			for _, child := range children {
-				_, err = ts.Push(child)
-				if err != nil {
-					panic(err)
-				}
-			}
-		}
-		metrics.StopLogDiff("trie-node-processes", _l)
-
-		metrics.StopLogDiff("traverse-state-trie-iterations", _tsti)
 	}
 
-	metrics.StopLogDiff("traverse-state-trie", 0)
+	metrics.StopLogDiff("traverse-state-trie", _l)
 }
 
-// processTrieNode will decode the given RLP. If the result is a branch or
-// extension, it will return its children hashes, otherwise, nil will
-// be returned.
-func (ts *TrieStack) processTrieNode(rlpTrieNode []byte) [][]byte {
-	var (
-		out [][]byte
-		i   []interface{}
-	)
+// traverseStateTrieIteration is the atomic component of the
+// loop in TraverseStateTrie.
+func (ts *TrieStack) traverseStateTrieIteration() error {
+	_l := metrics.StartLogDiff("traverse-state-trie-iterations")
 
-	// Decode the node
-	err := rlp.DecodeBytes(rlpTrieNode, &i)
+	// Get the next item from the stack
+	item, err := ts.Pop()
 	if err != nil {
-		// Zero tolerance, if we have an err here,
-		// it means our source database could be in bad shape.
+		return err
+	}
+	// This clarifies a bit the code below
+	key := item.Value
+
+	// Fetch the value
+	val := ts.fetchFromGethDB(key)
+
+	switch ts.operation {
+	case "evmcode":
+		// If it is a leaf, we will get its EVM Code
+		evmCodeKey := getTrieNodeEVMCode(val)
+		if evmCodeKey != nil {
+			code := ts.fetchFromGethDB(evmCodeKey)
+			ts.storeFile(crypto.Keccak256(code), code)
+		}
+	case "state-trie":
+		// Just store the found element
+		ts.storeFile(key, val)
+	}
+
+	// Find the children of this element.
+	// If found, they will be pushed in the stack.
+	ts.findChildrenToStack(val)
+
+	metrics.StopLogDiff("traverse-state-trie-iterations", _l)
+	return nil
+}
+
+// liveCounter gives the lonely user some company
+func (ts *TrieStack) liveCounter() {
+	ts.iterationCheapCounter++
+	fmt.Printf("%d\r", ts.iterationCheapCounter)
+}
+
+// fetchFromGethDB returns the value from the cold LevelDB.
+func (ts *TrieStack) fetchFromGethDB(key []byte) []byte {
+	_l := metrics.StartLogDiff("geth-leveldb-get-queries")
+
+	val, err := ts.db.Get(key)
+	if err != nil {
+		panic(err)
+	}
+	metrics.AddLog("new-nodes-bytes-tranferred", int64(len(val)))
+
+	metrics.StopLogDiff("geth-leveldb-get-queries", _l)
+	return val
+}
+
+// findChildrenToStack evaluates a trie node. If it finds any
+// children, it will add them to the stack, to follow the traversal.
+func (ts *TrieStack) findChildrenToStack(rawVal []byte) {
+	_l := metrics.StartLogDiff("trie-node-children-processes")
+
+	children := getTrieNodeChildren(rawVal)
+	if children != nil {
+		for idx, child := range children {
+			// If we are in the first iteration (i.e. the root),
+			// we see whether --nibble is set. If so, process only the given one.
+			if ts.iterationCheapCounter == 1 && ts.firstNibbleInt != -1 {
+				if idx != ts.firstNibbleInt {
+					continue
+				}
+				// Tell the user what's going on
+				fmt.Printf("Reduced traversing from the root, down to %d\n",
+					ts.firstNibbleInt)
+			}
+
+			_, err := ts.Push(child)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	metrics.StopLogDiff("trie-node-children-processes", _l)
+}
+
+// storeFile will take the trie node contents, and store them into
+// the file system, with the given key as a file name.
+// It will take the first three bytes as subdirectories,
+// to make its lookup easier.
+func (ts *TrieStack) storeFile(key, contents []byte) {
+	_l := metrics.StartLogDiff("file-creations")
+
+	fileName := fmt.Sprintf("%x", key)
+	fileDir := filepath.Join(ts.dumpDir, fileName[0:2], fileName[2:4], fileName[4:6])
+	err := os.MkdirAll(fileDir, 0755)
+	if err != nil {
 		panic(err)
 	}
 
-	switch len(i) {
-	case 2:
-		first := i[0].([]byte)
-		last := i[1].([]byte)
-
-		switch first[0] / 16 {
-		case '\x00':
-			fallthrough
-		case '\x01':
-			// This is an extension
-			metrics.IncCounter("traverse-state-trie-extensions")
-			out = [][]byte{last}
-		case '\x02':
-			fallthrough
-		case '\x03':
-			// This is a leaf
-			metrics.IncCounter("traverse-state-trie-leaves")
-			out = nil
-		default:
-			// Zero tolerance
-			panic("unknown hex prefix on trie node")
-		}
-
-	case 17:
-		// This is a branch
-		metrics.IncCounter("traverse-state-trie-branches")
-
-		for _, vi := range i {
-			v := vi.([]byte)
-			switch len(v) {
-			case 0:
-				continue
-			case 32:
-				out = append(out, v)
-			default:
-				panic(fmt.Sprintf("unrecognized object: %v", v))
-			}
-		}
-
-	default:
-		panic("unknown trie node type")
+	err = ioutil.WriteFile(filepath.Join(fileDir, fileName), contents, 0644)
+	if err != nil {
+		panic(err)
 	}
 
-	return out
+	metrics.StopLogDiff("file-creations", _l)
 }

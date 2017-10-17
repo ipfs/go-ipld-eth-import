@@ -1,23 +1,37 @@
-build-cold:
-	go build -o build/bin/cold-importer cold-importer/*.go
+## TODO
+## make all
+## make state-trie-file
+## make state-trie-ipfs
 
-cold: hack build-cold unhack
+all: evmcode-file evmcode-ipfs state-trie-file
 
 clean:
 	rm -rf build/bin/*
 
-# There should be a better way than gx-go hook *-test
-# If you know it, please share it :-)
-hack:
-	gx-go hook pre-test
-	sed -i '' 's/package main/package plugin/' ${GOPATH}/src/github.com/ipfs/go-ipld-eth/plugin/eth.go
-	cd ${GOPATH}/src/github.com/ipfs/go-ipld-eth; gx-go hook pre-test
+clean-deps:
+	build/un-convert-ipfs-deps.sh
 
-# Very ugly! Open to suggestions
-# Will think on something later
-unhack:
-	cd ${GOPATH}/src/github.com/ipfs/go-ipld-eth; gx-go hook post-test
-	sed -i '' 's/package plugin/package main/' ${GOPATH}/src/github.com/ipfs/go-ipld-eth/plugin/eth.go
-	gx-go hook post-test
+evmcode-file:
+	build/convert-ipfs-deps.sh
+	go build -v -o build/bin/evmcode-file cold-importer/evmcode-file/*.go
+	build/un-convert-ipfs-deps.sh
 
-.PHONY: build-cold cold clean hack unhack
+evmcode-ipfs:
+	build/convert-ipfs-deps.sh
+	go build -v -o build/bin/evmcode-ipfs cold-importer/evmcode-ipfs/*.go
+	build/un-convert-ipfs-deps.sh
+
+state-trie-file:
+	build/convert-ipfs-deps.sh
+	go build -v -o build/bin/state-trie-file cold-importer/state-trie-file/*.go
+	build/un-convert-ipfs-deps.sh
+
+vet:
+	build/convert-ipfs-deps.sh
+	unused ./...
+	staticcheck ./...
+	gosimple ./...
+	golint ./...
+	build/un-convert-ipfs-deps.sh
+
+.PHONY: all lean clean-deps evmcode-file evmcode-ipfs state-trie-file vet
