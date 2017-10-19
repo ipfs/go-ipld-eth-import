@@ -4,9 +4,16 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-ipld-eth-import/metrics"
 )
+
+var emptyCodeHash = crypto.Keccak256(nil)
+
+// This is the known root hash of an empty trie.
+var emptyRoot = common.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
 
 // getTrieNodeChildren will decode the given RLP.
 // If the result is a branch or extension, it will return its
@@ -111,6 +118,65 @@ func getTrieNodeEVMCode(rlpTrieNode []byte) []byte {
 			if !bytes.Equal(codeHash, emptyCodeHash) {
 				metrics.IncCounter("traverse-state-smart-contracts")
 				out = codeHash
+			} else {
+				out = nil
+			}
+
+		default:
+			// Zero tolerance
+			panic("unknown hex prefix on trie node")
+		}
+
+	case 17:
+		// This is a branch
+		out = nil
+
+	default:
+		panic("unknown trie node type")
+	}
+
+	return out
+}
+
+// getTrieNodeStorageRoot will decode the given RLP.
+// If the result is a leaf, it will return its Storage Trie.
+// If the Storage Trie is equal to the empty trie, it will return nil.
+func getTrieNodeStorageRoot(rlpTrieNode []byte) []byte {
+	var (
+		out []byte
+		i   []interface{}
+	)
+
+	// Decode the node
+	err := rlp.DecodeBytes(rlpTrieNode, &i)
+	if err != nil {
+		panic(err)
+	}
+
+	switch len(i) {
+	case 2:
+		first := i[0].([]byte)
+		last := i[1].([]byte)
+
+		switch first[0] / 16 {
+		case '\x00':
+			fallthrough
+		case '\x01':
+			// This is an extension
+			out = nil
+		case '\x02':
+			fallthrough
+		case '\x03':
+			// This is a leaf
+			var account []interface{}
+			err = rlp.DecodeBytes(last, &account)
+			if err != nil {
+				panic(err)
+			}
+
+			storageRoot := account[2].([]byte)
+			if !bytes.Equal(storageRoot, emptyRoot[:]) {
+				out = storageRoot
 			} else {
 				out = nil
 			}
