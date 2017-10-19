@@ -171,7 +171,12 @@ func getTrieNodeStorageRoot(rlpTrieNode []byte) []byte {
 			var account []interface{}
 			err = rlp.DecodeBytes(last, &account)
 			if err != nil {
-				panic(err)
+				// Ignore the error, as we are probably dealing
+				// with a storage trie leaf
+				// TODO
+				// Improve the stack we are using so we can know this
+				// And procede better
+				return nil
 			}
 
 			storageRoot := account[2].([]byte)
