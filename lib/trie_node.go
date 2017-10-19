@@ -202,6 +202,15 @@ func (ts *TrieStack) fetchFromGethDB(key []byte) []byte {
 func (ts *TrieStack) findChildrenToStack(rawVal []byte) {
 	_l := metrics.StartLogDiff("trie-node-children-processes")
 
+	// TODO
+	// Fix the parsing of branches on getTrieNodeChildren().
+	// This catch-all can do meanwhile.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in findChildrenToStack ", r)
+		}
+	}()
+
 	children := getTrieNodeChildren(rawVal)
 	if children != nil {
 		for idx, child := range children {
