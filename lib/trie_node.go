@@ -18,8 +18,6 @@ import (
 // MEthStateTrie is the cid codec for a Ethereum State Trie.
 const MEthStateTrie = 0x96
 
-var emptyCodeHash = crypto.Keccak256(nil)
-
 // TrieStack wraps the goque stack, enabling the adding of specific
 // methods for dealing with the state trie.
 type TrieStack struct {
@@ -86,6 +84,8 @@ func NewTrieStack(db *GethDB, blockNumber uint64, dumpDir, nibble, operation str
 		ts.operation = "evmcode"
 	case "state-trie":
 		ts.operation = "state-trie"
+	case "count-all":
+		ts.operation = "count-all"
 	default:
 		panic("operation not supported")
 	}
@@ -158,6 +158,15 @@ func (ts *TrieStack) traverseStateTrieIteration() error {
 	case "state-trie":
 		// Just store the found element
 		ts.storeFile(key, val)
+	case "count-all":
+		// Add storage trie to the traversal
+		storageRoot := getTrieNodeStorageRoot(val)
+		if storageRoot != nil {
+			_, err := ts.Push(storageRoot)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 
 	// Find the children of this element.
