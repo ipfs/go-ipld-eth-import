@@ -33,14 +33,14 @@ By separating those functions, and allowing the use of prefixes, these activitie
 
 ### Requirements
 
-Install the following programs
+Just do
 
 ```
-go get -v -u github.com/whyrusleeping/gx
-go get -v -u github.com/whyrusleeping/gx-go
-
-go get -v -u github.com/ipfs/go-ipld-eth
+./build/first-load.sh
 ```
+
+If you want to become a weekend contributor, here is your low hanging fruit:
+_make this script elegant_.
 
 ### Importers
 
